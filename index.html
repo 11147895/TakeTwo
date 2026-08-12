@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="TakeTwo">
+<meta name="theme-color" content="#f5f4f0">
+<title>TakeTwo</title>
+<style>
+:root {
+  --purple: #534ab7; --purple-light: #eeedfe; --purple-bg: #f7f6fd;
+  --teal: #1d9e75; --teal-light: #e1f5ee;
+  --coral: #d85a30; --coral-light: #faece7;
+  --amber: #ba7517; --amber-light: #faeeda;
+  --red: #e24b4a; --red-light: #fcebeb;
+  --blue: #378add; --blue-light: #e6f1fb;
+  --green: #3b6d11; --green-light: #eaf3de;
+  --text: #1a1a1a; --text-secondary: #555; --text-muted: #999;
+  --bg: #f5f4f0; --card: #ffffff; --border: #e0ded8;
+  --radius: 16px; --radius-sm: 10px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+  --safe-top: env(safe-area-inset-top, 20px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+}
+.app{height:100%;display:flex;flex-direction:column;overflow:hidden}
+
+/* Navigation */
+.nav{
+  padding:0 8px;padding-top:env(safe-area-inset-top, 0);
+  display:flex;align-items:center;justify-content:space-between;z-index:50;
+  border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);min-height:52px;
+}
+.nav-left{width:56px;flex-shrink:0}
+.nav-title{font-size:16px;font-weight:600;text-align:center;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-back{
+  display:none;align-items:center;justify-content:center;
+  background:none;border:none;color:var(--purple);font-size:22px;font-weight:400;
+  cursor:pointer;padding:8px 12px;min-width:44px;min-height:44px;
+  z-index:51;-webkit-user-select:none;user-select:none;flex-shrink:0
+}
+.nav-back.visible{display:flex !important}
+.nav-back.hidden{display:none !important}
+.nav-actions{flex-shrink:0;width:44px;display:flex;justify-content:flex-end;z-index:51}
+.nav-settings{
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:none;font-size:18px;cursor:pointer;padding:12px 10px;min-width:44px;min-height:44px;
+  z-index:51;-webkit-user-select:none;user-select:none
+}
+
+/* Screens */
+.screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;flex-direction:column}
+.screen.active{display:flex}
+
+/* Splash */
+.splash-screen{align-items:center;justify-content:center;text-align:center;padding:0 32px;background:var(--purple)}
+.splash-logo{font-size:60px;margin-bottom:12px}
+.splash-title{font-size:28px;font-weight:700;color:#fff;margin-bottom:8px}
+.splash-subtitle{font-size:15px;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:36px}
+.btn-start{padding:14px 48px;background:#fff;color:var(--purple);border:none;border-radius:100px;
+  font-size:17px;font-weight:600;cursor:pointer}
+.btn-start:active{opacity:.8}
+
+/* Home */
+.home-screen{padding:20px 16px;gap:16px;align-items:stretch}
+.home-header{margin-bottom:4px}
+.home-header h1{font-size:24px;font-weight:700}
+.home-header p{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.mode-card{
+  background:var(--card);border-radius:var(--radius);padding:20px;
+  border:1px solid var(--border);cursor:pointer;transition:.2s;
+  display:flex;flex-direction:column;gap:4px
+}
+.mode-card:active{transform:scale(.98)}
+.mode-card.now{border-left:3px solid var(--coral)}
+.mode-card.training{border-left:3px solid var(--purple)}
+.mode-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:6px;display:inline-block;width:fit-content}
+.mode-card.now .mode-badge{background:var(--coral-light);color:var(--coral)}
+.mode-card.training .mode-badge{background:var(--purple-light);color:var(--purple)}
+.mode-icon{font-size:32px;margin:4px 0}
+.mode-title{font-size:17px;font-weight:600}
+.mode-desc{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.recent-section{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border)}
+.recent-section h3{font-size:14px;margin-bottom:10px}
+.recent-item{display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer}
+.recent-item:active{opacity:.6}
+.ri-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ri-dot.amber{background:var(--amber)}.ri-dot.green{background:var(--green)}
+.ri-dot.red{background:var(--coral)}.ri-dot.purple{background:var(--purple)}
+.recent-empty{text-align:center;padding:16px 0;font-size:13px;color:var(--text-muted)}
+
+/* Chat */
+.chat-screen{overflow:hidden}
+.mini-progress{height:3px;background:var(--border-light)}
+.mini-progress .fill{height:100%;background:var(--purple);transition:width .5s;border-radius:0 2px 2px 0}
+.chat-area{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:85%;animation:msgIn .3s ease-out}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.agent{align-self:flex-start}
+.msg.user{align-self:flex-end}
+.msg.agent .msg-bubble{
+  padding:10px 14px;border-radius:16px 16px 16px 4px;font-size:14px;line-height:1.55;
+  background:var(--card);border:1px solid var(--border)
+}
+.msg.user .msg-bubble{
+  padding:10px 14px;border-radius:16px 16px 4px 16px;font-size:14px;line-height:1.55;
+  background:var(--purple);color:#fff
+}
+.msg.system{
+  align-self:center;font-size:11px;color:var(--text-muted);
+  padding:4px 12px;background:var(--border);border-radius:10px
+}
+.msg.system.step-label{font-weight:600;color:var(--purple);background:var(--purple-light);font-size:12px}
+.msg .highlight{background:var(--purple-light);color:var(--purple);padding:0 4px;border-radius:3px}
+.chat-input-area{padding:10px 16px;padding-bottom:max(10px,var(--safe-bottom));
+  background:var(--card);border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.chat-input-area textarea{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;
+  font-size:15px;font-family:inherit;outline:none;resize:none;max-height:100px;line-height:1.4;background:var(--bg)}
+.chat-input-area textarea:focus{border-color:var(--purple)}
+.btn-send{width:40px;height:40px;border-radius:20px;border:none;background:var(--purple);color:#fff;
+  font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.btn-send:active{opacity:.8}.btn-send:disabled{opacity:.4}
+
+/* Training select */
+.training-screen{padding:20px 16px;gap:12px}
+.section-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.select-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.select-card{padding:16px 12px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius-sm);
+  text-align:center;cursor:pointer;transition:.2s}
+.select-card.selected{border-color:var(--purple);background:var(--purple-light)}
+.select-card:active{transform:scale(.96)}
+.sc-icon{font-size:28px;margin-bottom:4px}
+.sc-label{font-size:13px;font-weight:500}
+.scenario-list{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.scenario-item{padding:12px 14px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius-sm);
+  display:flex;align-items:center;gap:8px;cursor:pointer;transition:.2s}
+.scenario-item.selected{border-color:var(--purple);background:var(--purple-light)}
+.si-icon{font-size:22px}.si-name{font-size:14px;font-weight:500;flex:1}.si-diff{font-size:12px;color:var(--text-muted)}
+.btn-primary{padding:14px;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);
+  font-size:15px;font-weight:600;cursor:pointer;width:100%;margin-top:4px}
+.btn-primary:disabled{opacity:.4}
+.btn-primary:active{opacity:.8}
+
+/* Report */
+.report-screen{padding:16px;gap:12px}
+.report-header{text-align:center;padding:20px 0}
+.score-circle{display:inline-flex;width:72px;height:72px;border-radius:50%;background:var(--purple);
+  color:#fff;font-size:32px;font-weight:700;align-items:center;justify-content:center}
+.grade{font-size:20px;font-weight:700;margin:8px 0}
+.grade-desc{font-size:13px;color:var(--text-secondary)}
+.report-card{background:var(--card);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border)}
+.report-card h4{font-size:14px;margin-bottom:8px}
+.report-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.rr-good{color:var(--teal);font-weight:500}
+.rr-warn{color:var(--amber)}
+/* Session Detail */
+.chat-replay{background:var(--card);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden}
+.chat-replay h4{padding:12px 14px 8px;font-size:14px;margin:0}
+.replay-msg{padding:8px 14px;font-size:13px;line-height:1.5;border-bottom:1px solid var(--border)}
+.replay-msg:last-child{border-bottom:none}
+.replay-msg.user{background:var(--bg)}
+.replay-msg.agent{background:#fff}
+.replay-label{font-size:10px;color:var(--text-muted);flex-shrink:0;min-width:36px;font-weight:600}
+.tags-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:500}
+.tag-build{background:var(--green-light);color:var(--green)}
+.tag-avoid{background:var(--coral-light);color:var(--coral)}
+
+/* Settings modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);
+  display:flex;align-items:flex-end;justify-content:center;z-index:200}
+.modal-sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-height:80vh;
+  overflow-y:auto;padding:24px 20px;padding-bottom:max(24px,var(--safe-bottom))}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:18px;font-weight:600;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;color:var(--text-secondary);margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:inherit;background:var(--bg)}
+.form-input:focus{outline:none;border-color:var(--purple)}
+.form-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+.btn-danger{width:100%;padding:12px;background:transparent;color:var(--red);border:1px solid var(--red-light);
+  border-radius:var(--radius-sm);font-size:14px;cursor:pointer;margin-top:8px}
+.btn-danger:active{background:var(--red-light)}
+/* Typing indicator */
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:typingBounce 1.4s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+/* Toast */
+.toast{position:fixed;bottom:100px;left:16px;right:16px;background:var(--red-light);color:var(--red);padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;text-align:center;z-index:999;animation:toastIn .3s}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}</style>
+<script src="skills.js"></script>
+<script src="agent.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <!-- Navigation Bar -->
+  <div class="nav">
+    <div class="nav-left">
+      <button class="nav-back" id="navBack" ontouchstart="" onclick="goBack(event)">‹</button>
+    </div>
+    <span class="nav-title" id="navTitle">TakeTwo</span>
+    <div class="nav-actions">
+      <button class="nav-settings" ontouchstart="" onclick="showSettings(event)">⚙</button>
+    </div>
+  </div>
+
+  <!-- ===== SPLASH SCREEN ===== -->
+  <div class="screen splash-screen active" id="screen-launch">
+    <div class="splash-logo"></div>
+    <div class="splash-title">TakeTwo</div>
+    <div class="splash-subtitle">每一次不舒服的对话<br>都是一次练习的机会</div>
+    <button class="btn-start" onclick="navigateTo('home')">开始</button>
+  </div>
+
+  <!-- ===== HOME SCREEN ===== -->
+  <div class="screen home-screen" id="screen-home">
+    <div class="home-header">
+      <h1>Hey 👋</h1>
+      <p>每一次不舒服的对话，都是一次练习的机会</p>
+    </div>
+
+    <div class="mode-card now" onclick="startNowMode()">
+      <span class="mode-badge">⚡ 急救模式</span>
+      <div class="mode-icon">🆘</div>
+      <div class="mode-title">此刻</div>
+      <div class="mode-desc">刚遇到让人不舒服的场景？说出来，我带你一步步理清。</div>
+    </div>
+
+    <div class="mode-card training" onclick="startTrainingSelect()">
+      <span class="mode-badge">🏋️ 训练模式</span>
+      <div class="mode-icon">🎯</div>
+      <div class="mode-title">沙盘</div>
+      <div class="mode-desc">提前练习常见的卡壳场景。五关渐进，从听懂到迁移。</div>
+    </div>
+
+    <div class="recent-section" id="recentSection">
+      <h3>📋 最近练习</h3>
+      <div id="recentList">
+        <div class="recent-empty">还没有练习记录<br><span style="font-size:12px;color:var(--text-muted)">去沙盘完成一次训练吧</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHAT SCREEN ===== -->
+  <div class="screen chat-screen" id="screen-chat">
+    <div class="mini-progress"><div class="fill" id="progressBar" style="width:0%"></div></div>
+    <div class="chat-area" id="chatArea"></div>
+    <div class="chat-input-area">
+      <textarea id="chatInput" rows="1" placeholder="输入你的回答…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+      <button class="btn-send" id="btnSend" onclick="sendMessage()">↑</button>
+    </div>
+  </div>
+
+  <!-- ===== TRAINING SELECT ===== -->
+  <div class="screen training-screen" id="screen-training-select">
+    <div class="section-label">第 1 步</div>
+    <h3 style="font-size:17px;font-weight:700">选择关系类型</h3>
+    <div class="select-grid" id="relationGrid">
+      <div class="select-card" onclick="selectRelation('workplace',this)"><div class="sc-icon">💼</div><div class="sc-label">职场</div></div>
+      <div class="select-card" onclick="selectRelation('partner',this)"><div class="sc-icon">❤️</div><div class="sc-label">亲密关系</div></div>
+      <div class="select-card" onclick="selectRelation('friend',this)"><div class="sc-icon">👥</div><div class="sc-label">朋友</div></div>
+      <div class="select-card" onclick="selectRelation('family',this)"><div class="sc-icon">🏠</div><div class="sc-label">家人</div></div>
+    </div>
+    <div class="section-label" style="margin-top:8px">第 2 步</div>
+    <h3 style="font-size:17px;font-weight:700">哪个场景最像你遇到的？</h3>
+    <div class="scenario-list" id="scenarioList"></div>
+    <button class="btn-primary" id="btnStartTraining" disabled onclick="startTraining()">开始训练 →</button>
+  </div>
+
+  <!-- ===== REPORT SCREEN ===== -->
+  <div class="screen report-screen" id="screen-report">
+    <div class="report-content" id="reportContent"></div>
+  </div>
+
+  <!-- ===== SESSION DETAIL SCREEN ===== -->
+  <div class="screen report-screen" id="screen-session-detail">
+    <div class="report-content" id="sessionDetailContent"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal" style="display:none" onclick="if(event.target===this)hideSettings()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙ 设置</div>
+    <div class="form-group">
+      <label class="form-label">API Base URL</label>
+      <input class="form-input" id="settingsBaseUrl" readonly>
+      <div class="form-hint">已预置，无需修改</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input class="form-input" id="settingsApiKey" type="password" readonly>
+      <div class="form-hint">已预置，无需修改</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">模型</label>
+      <input class="form-input" id="settingsModel" readonly>
+    </div>
+    <button class="btn-primary" onclick="saveSettings()">保存设置</button>
+    <button class="btn-danger" onclick="clearHistory()">清除练习记录</button>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+const state={
+  screen:'launch',mode:null,
+  // Chat state
+  chatStep:0,chatHistory:[],chatComplete:false,
+  // Training state
+  selectedRelation:null,selectedScenario:null,currentVariant:1,currentLevel:1,levelResults:[],
+  // Now mode
+  nowPhase:'input',userScenario:'',userPattern:'',
+  nvcSteps:[
+    {step:1,name:'观察',goal:'只说你看到、听到的事实，不加你的解读'},
+    {step:2,name:'感受',goal:'表达你的情绪感受，不是想法或判断'},
+    {step:3,name:'需要',goal:'识别你的什么需要没有被满足'},
+    {step:4,name:'请求',goal:'提出具体、可执行的请求'}
+  ],currentNvcStep:0,nvcAnswers:[],nvcRetries:0,
+  // Sandbox level names (shared with agent)
+  sandboxLevels:['听懂','看见自己','换方式','稳住','迁移']
+};
+// Settings — 自动检测环境：iOS 原生壳走直连，浏览器走 Worker 代理
+const IS_IOS_NATIVE=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.apiProxy);
+const PROXY_URL='https://taketwo-proxy.taketwo.workers.dev';
+let settings={
+  baseUrl:IS_IOS_NATIVE?'https://api.deepseek.com':PROXY_URL,
+  apiKey:IS_IOS_NATIVE?'sk-fd2be06837cb42fcbeb2d2a88fb3ff0d':'proxy',
+  model:'deepseek-v4-flash'
+};
+function loadSettings(){/* 配置已预置，无需从 localStorage 读取 */}
+function saveSettingsToStorage(){/* 配置已预置，无需持久化 */}
+// Error trap
+window.onerror=function(msg,url,line,col,err){
+  try{
+    var a=document.getElementById('chatArea');
+    if(a){var d=document.createElement('div');d.className='msg system';d.style.color='red';d.textContent='⚠️ 出错: '+(err&&err.message||msg||'未知错误');a.appendChild(d);a.scrollTop=a.scrollHeight}
+  }catch(e){}
+  console.error('TakeTwo Error:',msg,err);
+  return false;
+};
+
+// ========== SCENARIO DATA ==========
+// 每个场景绑定了：适用的心理方法 + Level 1 听懂选项
+const workplaceScenarios=[
+  {id:'w1',name:'被当众质疑方案',icon:'😰',diff:'★★★',desc:'"这方案你自己看过吗？"',
+   method:'非暴力沟通',
+   lvl1:[
+    {text:'他希望方案更完善一些',correct:true},
+    {text:'他想确认我有没有认真对待',correct:true},
+    {text:'他故意当众让我难堪',correct:false},
+    {text:'他不认可我的能力',correct:false}
+   ]},
+  {id:'w2',name:'被私下批评',icon:'😔',diff:'★★★',desc:'"你最近是不是有点不在状态？"',
+   method:'课题分离',
+   lvl1:[
+    {text:'他观察到我最近表现有变化',correct:true},
+    {text:'他在关心我的状态、想了解原因',correct:true},
+    {text:'他想找理由开除我',correct:false},
+    {text:'他在否定我这个人',correct:false}
+   ]},
+  {id:'w3',name:'被催促进度',icon:'😣',diff:'★★',desc:'"这个什么时候能好？已经拖很久了"',
+   method:'非暴力沟通',
+   lvl1:[
+    {text:'他的期望值和我实际进度有差距',correct:true},
+    {text:'他需要明确的时间节点来做下一步安排',correct:true},
+    {text:'他在质疑我的工作效率',correct:false},
+    {text:'他不体谅我的工作量',correct:false}
+   ]},
+  {id:'w4',name:'被要求加班',icon:'😩',diff:'★★★★',desc:'"这个周末能搞定吧？"',
+   method:'果断表达法',
+   lvl1:[
+    {text:'项目确实有紧迫的时间节点',correct:true},
+    {text:'他在试探我的边界，看我能承受多少',correct:true},
+    {text:'他根本不在乎我的个人生活',correct:false},
+    {text:'他是故意的，就是要让我难受',correct:false}
+   ]},
+  {id:'w5',name:'被甩锅',icon:'😤',diff:'★★★',desc:'"这个部分之前是谁做的？搞成这样"',
+   method:'事实锚定法',
+   lvl1:[
+    {text:'他对这个环节的结果不满',correct:true},
+    {text:'他可能不知道之前的决策背景',correct:true},
+    {text:'他故意把责任推到我身上',correct:false},
+    {text:'他想让大家都知道是我做的',correct:false}
+   ]},
+  {id:'w6',name:'开会发言被打断',icon:'😠',diff:'★★★',desc:'"这个方案我之前想过，但是有几个问题"',
+   method:'降维回应法',
+   lvl1:[
+    {text:'他可能有不同意见想尽早提出来',correct:true},
+    {text:'他习惯在讨论中插话，不是针对我',correct:true},
+    {text:'他故意不尊重我，要打压我',correct:false},
+    {text:'他就是看我不顺眼',correct:false}
+   ]},
+  {id:'w7',name:'被安排多余工作',icon:'😵',diff:'★★',desc:'"这个你顺手做一下，应该很快"',
+   method:'果断表达法',
+   lvl1:[
+    {text:'他觉得我办事靠谱，交给我放心',correct:true},
+    {text:'他不清楚我手头有多少事',correct:true},
+    {text:'他在把我当软柿子捏',correct:false},
+    {text:'他觉得我的时间不值钱',correct:false}
+   ]},
+  {id:'w8',name:'被公开表扬',icon:'😊',diff:'★',desc:'"这次做得很好，大家向TA学习"',
+   method:'接受力训练',
+   lvl1:[
+    {text:'我的努力被看到了，这是好事',correct:true},
+    {text:'接受认可≠骄傲，可以大方接受',correct:true},
+    {text:'他只是客套一下，不用当真',correct:false},
+    {text:'后面肯定要给我加活，先夸再压',correct:false}
+   ]},
+  {id:'w9',name:'被忽略意见',icon:'😶',diff:'★★★',desc:'"这个提议挺有意思的——对了，刚才说到哪了"',
+   method:'课题分离',
+   lvl1:[
+    {text:'我的表达可能不够直接有力',correct:true},
+    {text:'会议节奏快，大家关注的焦点不同',correct:true},
+    {text:'他们看不起我的想法',correct:false},
+    {text:'我在这个团队没有发言权',correct:false}
+   ]},
+  {id:'w10',name:'被画大饼',icon:'🤔',diff:'★★',desc:'"这个项目做完，你肯定是核心骨干了"',
+   method:'事实锚定法',
+   lvl1:[
+    {text:'他在用未来回报激励我完成当前工作',correct:true},
+    {text:'他认可我的潜力，愿意给我机会',correct:true},
+    {text:'他纯粹在忽悠我，一个字都不能信',correct:false},
+    {text:'他就是不想多给钱',correct:false}
+   ]}
+];
+const partnerScenarios=[
+  {id:'p1',name:'翻旧账争吵',icon:'😞',diff:'★★★',desc:'"你上次也是这样"',
+   method:'非暴力沟通',
+   lvl1:[
+    {text:'他在翻旧账来增强自己的道理',correct:true},
+    {text:'过去的事让他还没放下',correct:true},
+    {text:'他在故意找茬吵架',correct:false},
+    {text:'他对我们关系失去了信心',correct:false}
+   ]},
+  {id:'p2',name:'冷战不说话',icon:'😶',diff:'★★',desc:'对方沉默，不知道哪里错了',
+   method:'接受力训练',
+   lvl1:[
+    {text:'他可能在消化自己的情绪',correct:true},
+    {text:'他不擅长表达，一吵架就封闭',correct:true},
+    {text:'他在用沉默惩罚我',correct:false},
+    {text:'他根本不在乎我的感受',correct:false}
+   ]},
+  {id:'p3',name:'被说"你根本不在乎我"',icon:'💔',diff:'★★★★',desc:'"你根本不在乎我"',
+   method:'非暴力沟通',
+   lvl1:[
+    {text:'他感到被忽视了',correct:true},
+    {text:'他在索取更多的关注和爱',correct:true},
+    {text:'他在全盘否定我的付出',correct:false},
+    {text:'他对我们关系已经不抱期待了',correct:false}
+   ]},
+  {id:'p4',name:'被说"最近辛苦了"',icon:'🫂',diff:'★',desc:'"最近看你天天加班，辛苦了"',
+   method:'接受力训练',
+   lvl1:[
+    {text:'他在关心我的状态',correct:true},
+    {text:'他想表达对我的心疼',correct:true},
+    {text:'他在暗示我应该多陪陪他',correct:false},
+    {text:'他只是客套不是真心的',correct:false}
+   ]},
+  {id:'p5',name:'被当众夸奖',icon:'💐',diff:'★',desc:'"我家这位真的特别靠谱，上次……"',
+   method:'接受力训练',
+   lvl1:[
+    {text:'他想在朋友面前肯定我',correct:true},
+    {text:'他为我感到骄傲',correct:true},
+    {text:'他是在给我施加压力',correct:false},
+    {text:'他说的和心里想的不一样',correct:false}
+   ]},
+  {id:'p6',name:'被说"你总是不回消息"',icon:'📵',diff:'★★',desc:'"你总是不回我消息，别人的你就秒回"',
+   method:'事实锚定法',
+   lvl1:[
+    {text:'他感到被冷落了',correct:true},
+    {text:'他需要被优先对待的感觉',correct:true},
+    {text:'他在无理取闹',correct:false},
+    {text:'他就是控制欲太强',correct:false}
+   ]},
+  {id:'p7',name:'被比较"你看看别人"',icon:'😤',diff:'★★★',desc:'"你看看XX家那位，再看看你"',
+   method:'课题分离',
+   lvl1:[
+    {text:'他对某件事有不满',correct:true},
+    {text:'他其实是想激励我但方式错了',correct:true},
+    {text:'他彻底看不起我了',correct:false},
+    {text:'他就是要羞辱我',correct:false}
+   ]},
+  {id:'p8',name:'纪念日忘了',icon:'📅',diff:'★★★',desc:'"今天什么日子？你真的一点都不记得了？"',
+   method:'非暴力沟通',
+   lvl1:[
+    {text:'他对这个日子非常在意',correct:true},
+    {text:'他失望的是被忽视的感觉',correct:true},
+    {text:'他小题大做、仪式感不重要',correct:false},
+    {text:'他要借这个契机跟我吵架',correct:false}
+   ]},
+  {id:'p9',name:'被说"你变了"',icon:'🍂',diff:'★★★',desc:'"你以前不是这样的，你变了"',
+   method:'课题分离',
+   lvl1:[
+    {text:'他感觉到关系发生了变化',correct:true},
+    {text:'他在怀念过去的美好状态',correct:true},
+    {text:'他觉得我变差了不够好了',correct:false},
+    {text:'他已经不爱我了',correct:false}
+   ]},
+  {id:'p10',name:'被指责乱花钱',icon:'💸',diff:'★★',desc:'"你又买？不是说好要省钱的吗"',
+   method:'果断表达法',
+   lvl1:[
+    {text:'他在表达对我们共同规划的重视',correct:true},
+    {text:'他希望消费观念更透明一致',correct:true},
+    {text:'他觉得花我的钱就是错的',correct:false},
+    {text:'他在限制我的自由',correct:false}
+   ]}
+];
+const friendScenarios=[
+  {id:'f1',name:'被借钱不好意思拒绝',icon:'🫣',diff:'★★',desc:'"最近手头紧，能不能…"',
+   method:'课题分离',
+   lvl1:[
+    {text:'他确实遇到了经济困难',correct:true},
+    {text:'他选择跟我开口是因为信任我',correct:true},
+    {text:'他在利用我们的友谊',correct:false},
+    {text:'不还的可能性很大',correct:false}
+   ]},
+  {id:'f2',name:'被阴阳怪气',icon:'😒',diff:'★★★',desc:'"哟，现在混得不错啊"',
+   method:'降维回应法',
+   lvl1:[
+    {text:'他可能有点嫉妒',correct:true},
+    {text:'他觉得我们之间生分了',correct:true},
+    {text:'他在恶意贬低我',correct:false},
+    {text:'他就是这种人，改不了',correct:false}
+   ]}
+];
+const familyScenarios=[
+  {id:'fm1',name:'被催婚',icon:'😅',diff:'★★★',desc:'"你怎么还不找对象？"',
+   method:'课题分离',
+   lvl1:[
+    {text:'他是真心关心我',correct:true},
+    {text:'他担心我以后孤独',correct:true},
+    {text:'他嫌我给家里丢人了',correct:false},
+    {text:'他想控制我的人生选择',correct:false}
+   ]},
+  {id:'fm2',name:'被过度干涉',icon:'😣',diff:'★★',desc:'"我这都是为你好"',
+   method:'课题分离',
+   lvl1:[
+    {text:'他真的认为这样对我最好',correct:true},
+    {text:'他的关心方式是干涉而不是支持',correct:true},
+    {text:'他是在用"为你好"施加控制',correct:false},
+    {text:'他不相信我自己能处理好',correct:false}
+   ]}
+];
+const allScenarios={workplace:workplaceScenarios,partner:partnerScenarios,friend:friendScenarios,family:familyScenarios};
+
+// ========== METHOD TRAINING ==========
+// 每种心理学方法的训练步骤结构
+const METHOD_TRAINING={
+  '非暴力沟通':{
+    source:'马歇尔·卢森堡《非暴力沟通》',
+    core:'观察→感受→需要→请求',
+    steps:[
+      {name:'听懂',type:'choice'},
+      {name:'看见自己',type:'reflect'},
+      {name:'观察',type:'nvc_step',nvcStep:0, hint:'只说事实——你看到了什么？听到了什么？不加任何解读'},
+      {name:'感受',type:'nvc_step',nvcStep:1, hint:'表达你的情绪感受（不是想法）'},
+      {name:'需要',type:'nvc_step',nvcStep:2, hint:'你的什么需要没有被满足？'},
+      {name:'请求',type:'nvc_step',nvcStep:3, hint:'提出一个具体、可执行的请求'},
+      {name:'稳住',type:'resist'},
+      {name:'迁移',type:'transfer'}
+    ]
+  },
+  '课题分离':{
+    source:'岸见一郎/古贺史健《被讨厌的勇气》',
+    core:'分清"我"和"别人"的课题',
+    steps:[
+      {name:'听懂',type:'choice'},
+      {name:'看见自己',type:'reflect'},
+      {name:'分清边界',type:'practice', instruction:'什么是「他的课题」？什么是「你的课题」？不要把别人的情绪、决定背在自己身上。'},
+      {name:'表达立场',type:'practice', instruction:'用课题分离的方式回应：承认他有选择的权利，同时守住你的边界。'},
+      {name:'稳住',type:'resist'},
+      {name:'迁移',type:'transfer'}
+    ]
+  },
+  '果断表达法':{
+    source:'兰迪·帕特森《果断力》',
+    core:'清晰、直接、尊重地表达需求',
+    steps:[
+      {name:'听懂',type:'choice'},
+      {name:'看见自己',type:'reflect'},
+      {name:'明确需求',type:'practice', instruction:'放下情绪，想清楚：你真正需要的是什么？写具体。'},
+      {name:'果断表达',type:'practice', instruction:'用 I-Statement 直接说——「我需要……」「我希望……」——不绕弯、不攻击。'},
+      {name:'稳住',type:'resist'},
+      {name:'迁移',type:'transfer'}
+    ]
+  },
+  '降维回应法':{
+    source:'实战沟通技巧',
+    core:'拒接情绪暗示，只回应表面意思',
+    steps:[
+      {name:'听懂',type:'choice'},
+      {name:'看见自己',type:'reflect'},
+      {name:'降维解读',type:'practice', instruction:'不接对方的话外音和情绪暗示——只看他字面上说了什么。'},
+      {name:'轻松回应',type:'practice', instruction:'用平静、轻松的语气回应字面意思，不卷入、不升级。'},
+      {name:'稳住',type:'resist'},
+      {name:'迁移',type:'transfer'}
+    ]
+  },
+  '接受力训练':{
+    source:'基于接纳承诺疗法(ACT)',
+    core:'接纳情绪，选择行动',
+    steps:[
+      {name:'听懂',type:'choice'},
+      {name:'看见自己',type:'reflect'},
+      {name:'接纳情绪',type:'practice', instruction:'承认你现在的情绪——不评判、不压制。它存在，但不决定你的回应。'},
+      {name:'选择行动',type:'practice', instruction:'深吸一口气。带着情绪，选择最有利于关系和自己的回应方式。'},
+      {name:'稳住',type:'resist'},
+      {name:'迁移',type:'transfer'}
+    ]
+  },
+  '事实锚定法':{
+    source:'道格拉斯·斯通《高难度对话》',
+    core:'回到具体事实，不陷入情绪',
+    steps:[
+      {name:'听懂',type:'choice'},
+      {name:'看见自己',type:'reflect'},
+      {name:'找回事实',type:'practice', instruction:'把情绪放到一边——回到具体发生了什么：时间、地点、谁说了什么、实际做了什么。'},
+      {name:'基于事实回应',type:'practice', instruction:'用事实回应——「当时的情况是……」——不攻击、不解释、不回避。'},
+      {name:'稳住',type:'resist'},
+      {name:'迁移',type:'transfer'}
+    ]
+  }
+};
+
+// ========== NAVIGATION ==========
+function navigateTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  state.screen=id;
+  var back=document.getElementById('navBack'),title=document.getElementById('navTitle');
+  if(id==='launch'||id==='home'){back.classList.remove('visible');title.textContent='TakeTwo';loadRecentRecords()}
+  else if(id==='chat'){back.classList.add('visible');title.textContent=state.mode==='now'?'此刻 · 急救模式':'沙盘 · 第'+state.currentVariant+'变体'}
+  else if(id==='training-select'){back.classList.add('visible');title.textContent='沙盘'}
+  else if(id==='report'){back.classList.remove('visible');title.textContent='训练报告'}
+  else if(id==='session-detail'){back.classList.add('visible')}
+  document.querySelector('.app').scrollTop=0
+}
+function goBack(e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  if (state.screen === 'chat') {
+    if (state.mode === 'training') {
+      // 沙盘训练中 → 返回训练选择页
+      navigateTo('training-select');
+      resetState();
+    } else {
+      navigateTo('home');
+      resetState();
+    }
+  } else if (state.screen === 'training-select') {
+    navigateTo('home');
+    resetState();
+  } else if (state.screen === 'report') {
+    navigateTo('home');
+    resetState();
+  } else if (state.screen === 'session-detail') {
+    navigateTo('home');
+    resetState();
+  }
+}
+function goHome(){state._detailViewActive=false;navigateTo('home')}
+function resetState(){
+  state.chatStep=0;state.chatHistory=[];state.chatComplete=false;
+  state.nowPhase='input';state.userScenario='';state.userPattern='';
+  state.currentNvcStep=0;state.nvcAnswers=[];state.nvcRetries=0;
+  state.inNvcTraining=false;state.trainingMethod=null;
+  state._reviewGrade=undefined;state.recentChatHTML='';
+  document.getElementById('chatArea').innerHTML='';
+  document.getElementById('chatInput').value='';
+  document.getElementById('btnSend').disabled=false;
+  document.getElementById('progressBar').style.width='0%'
+}
+
+// ========== NOW MODE ==========
+function startNowMode(){
+  state.mode='now';state.nowPhase='input';state.userScenario='';resetState();navigateTo('chat');
+  AgentState.reset();AgentState.initSession('now');
+  setTimeout(function(){addAgentMsg('跟我说说，刚才发生了什么？<br><br>不用组织语言——就把你记得的、对方说的原话、你的感受，直接写下来就好。');document.getElementById('btnSend').disabled=false},500)
+}
+function sendMessage(){
+  var input=document.getElementById('chatInput'),text=input.value.trim();
+  if(!text||state.chatComplete)return;
+  input.value='';addUserMsg(text);
+  document.getElementById('btnSend').disabled=true;
+  handleAgentMessage(text);
+}
+
+// ========== AGENT MODE ==========
+async function handleAgentMessage(text){
+  showTyping();
+  try {
+    // Sync local state to AgentState
+    syncToAgentState();
+
+    var result = await AgentRunner.send(text);
+
+    // Sync Agent state back to local state
+    var prevLevel = AgentState.currentLevel;
+    syncFromAgentState(result.stateUpdate);
+
+    removeTyping();
+    addAgentMsg(result.text);
+
+    // If agent advanced to next level, show step label after response
+    if(state.mode==='training' && AgentState.currentLevel !== prevLevel && !AgentState.isComplete){
+      var step = typeof state._sandboxLevelToStep==='function' ? state._sandboxLevelToStep(AgentState.currentLevel) : -1;
+      if(step>=0 && step<state.trainingSteps.length){
+        addSystemMsg('第'+AgentState.currentLevel+'关：'+state.trainingSteps[step].name,true);
+      }
+    }
+
+    // Check if complete → show review
+    if(AgentState.isComplete){
+      state.chatComplete = true;
+      state.nvcAnswers = AgentState.stepAnswers;
+      state.userPattern = AgentState.userPattern;
+      state.levelResults = AgentState.levelResults || [];
+      document.getElementById('progressBar').style.width='100%';
+      if(state.mode==='now') setTimeout(showAgentNvcSummary, 1000);
+      else setTimeout(showAgentTrainingComplete, 1000);
+    } else {
+      document.getElementById('btnSend').disabled = false;
+    }
+  } catch(e) {
+    removeTyping();
+    showToast('出错了：' + (e.message==='CORS_ERROR'?'网络请求失败，请检查代理配置或使用 iOS App':e.message));
+    document.getElementById('btnSend').disabled = false;
+  }
+}
+
+function syncToAgentState(){
+  if(!AgentState.sessionId) AgentState.initSession(state.mode);
+  AgentState.userScenario = state.userScenario;
+  AgentState.selectedScenario = state.selectedScenario;
+  AgentState.selectedRelation = state.selectedRelation;
+  AgentState.currentVariant = state.currentVariant || 1;
+  // Map step index → sandbox level (variant>1: step 0→level 2, step 1→level 3, step 2→level 4)
+  AgentState.currentLevel = typeof state._sandboxStepToLevel==='function' ? state._sandboxStepToLevel(state.currentTrainingStep||0) : ((state.currentTrainingStep||0)+1);
+  AgentState.currentMethod = AgentState.currentMethod || state.trainingMethod || null;
+  AgentState.nowPhase = state.nowPhase;
+  AgentState.stepNumber = state.currentNvcStep + 1;
+  if(state.nvcSteps && state.currentNvcStep >= 0){
+    AgentState.currentStep = state.nvcSteps[state.currentNvcStep]?.name || '';
+  }
+  AgentState.stepAnswers = state.nvcAnswers || [];
+  AgentState.levelResults = state.levelResults || [];
+  AgentState.userPattern = state.userPattern || '防御型';
+}
+
+function syncFromAgentState(stateUpdate){
+  state.nowPhase = AgentState.nowPhase;
+  state.currentNvcStep = AgentState.stepNumber - 1;
+  if(AgentState.currentStep){
+    for(var i=0;i<state.nvcSteps.length;i++){
+      if(state.nvcSteps[i].name===AgentState.currentStep){
+        state.currentNvcStep=i;break;
+      }
+    }
+  }
+  // For training mode: sync level to step mapping
+  if(state.mode==='training'&&typeof state._sandboxLevelToStep==='function'){
+    var step=state._sandboxLevelToStep(AgentState.currentLevel||1);
+    if(step>=0&&step!==state.currentTrainingStep){
+      // Agent advanced to a new level — update dots only (label shown by caller)
+      state.currentTrainingStep=step;
+      updateLevelDots(step);
+    }
+  } else {
+    state.currentTrainingStep = (AgentState.currentLevel || 1) - 1;
+  }
+  // 同步 levelResults
+  if(AgentState.levelResults && AgentState.levelResults.length > 0){
+    state.levelResults = AgentState.levelResults;
+  }
+  state.userPattern = AgentState.userPattern;
+  state.trainingMethod = AgentState.currentMethod || state.trainingMethod;
+  if(AgentState.stepAnswers.length > 0) state.nvcAnswers = AgentState.stepAnswers;
+  // Update progress bar
+  if(state.mode==='now'){
+    var totalSteps = getSkill(AgentState.currentMethod || '非暴力沟通').steps.length;
+    document.getElementById('progressBar').style.width=((state.currentNvcStep/totalSteps)*100)+'%';
+  }else if(state.mode==='training'){
+    // Progress based on sandbox levels (5 or 3 levels)
+    var totalLevels = state.trainingSteps ? state.trainingSteps.length : 5;
+    var pct = Math.round(((AgentState.currentLevel-1)/totalLevels)*100)+'%';
+    document.getElementById('progressBar').style.width=pct;
+  }
+}
+
+function showAgentNvcSummary(){
+  var methodName = AgentState.currentMethod || '非暴力沟通';
+  var skill = getSkill(methodName);
+  var totalSteps = skill ? skill.steps.length : 4;
+  setTimeout(function(){addSystemMsg('── '+skill.name+'练习回顾 ──',true)},300);
+  setTimeout(async function(){
+    var summary='<p>🎯 '+skill.name+'训练完成！</p>';
+    if(AgentState.stepAnswers.length>0){
+      summary+='<div style="background:var(--purple-light);padding:12px;border-radius:8px;margin:8px 0;font-size:13px">';
+      AgentState.stepAnswers.forEach(function(a){
+        summary+='<strong>'+a.step+'</strong>：'+a.answer+'<br>';
+      });
+      summary+='</div>';
+    }
+    summary+='<br>📊 <strong>方法：</strong>'+skill.name+'<br>📖 <strong>来源：</strong>'+skill.source+'<br><br>';
+    summary+='<p style="color:var(--text-muted);font-size:12px">正在生成复盘分析...</p>';
+    addAgentMsg(summary);
+    try{
+      var review = await AgentRunner.callReview();
+      showReviewReport(review);
+    }catch(e){
+      // callReview returns null on failure; showReviewReport handles null
+      showReviewReport(null);
+    }
+  },800);
+}
+
+function showReviewReport(review){
+  // Capture chat HTML before navigation
+  var ca = document.getElementById('chatArea');
+  state.recentChatHTML = ca ? ca.innerHTML : '';
+
+  // Build report HTML string (do this BEFORE touching DOM)
+  var reportHTML = '';
+  if(review && review.grade){
+    state._reviewGrade = review.grade;
+    if(review.reactionPattern) state.userPattern = review.reactionPattern;
+    reportHTML = '<div class="report-header"><div class="score-circle">'+review.grade+'</div><div class="grade">'+review.gradeLabel+'</div><div class="grade-desc">'+review.reactionPattern+'</div></div>'+
+      '<div class="report-card"><h4>💪 优点</h4>'+review.strengths.map(function(s){return '<p style="font-size:13px;color:var(--text-secondary)">✅ '+s+'</p>'}).join('')+'</div>'+
+      '<div class="report-card"><h4>⚠️ 待改进</h4>'+review.weaknesses.map(function(w){return '<p style="font-size:13px;color:var(--text-secondary);line-height:1.6"><strong>'+w.area+'</strong>：'+w.detail+'<br>→ '+w.suggestion+'</p>'}).join('')+'</div>'+
+      '<div class="report-card"><h4>💡 下一步</h4><p style="font-size:13px;color:var(--text-secondary)">'+review.nextRecommendation+'</p></div>';
+  } else {
+    // Fallback: API failed but still show something
+    reportHTML = '<div class="report-card"><p style="font-size:13px;color:var(--text-muted)">复盘报告生成中，请稍后查看</p></div>';
+    state._reviewGrade = 'B';
+  }
+  reportHTML += '<button class="btn-primary" onclick="goHome()" style="margin-top:8px">返回首页</button>';
+
+  // Apply to DOM
+  var rpt=document.getElementById('reportContent');
+  if(rpt) rpt.innerHTML = reportHTML;
+
+  // Save record NOW with captured data (don't wait for DOM)
+  if(state.mode==='now') saveNowSessionRecord(reportHTML);
+  else saveSessionRecord(reportHTML);
+
+  state.screen='report';navigateTo('report');
+}
+
+function showAgentTrainingComplete(){
+  setTimeout(async function(){
+    addSystemMsg('── 训练完成 ──',true);
+    var lvlCount=state.trainingSteps?state.trainingSteps.length:5;
+    var summary='<p>🎉 '+lvlCount+' 关全部完成！</p>';
+    summary+='<br>📊 <strong>方法：</strong>'+AgentState.currentMethod+'<br>';
+    if(AgentState.userPattern) summary+='🔍 <strong>反应模式：</strong>'+AgentState.userPattern+'<br>';
+    summary+='<br>';
+    summary+='<p style="color:var(--text-muted);font-size:12px">正在生成复盘分析...</p>';
+    addAgentMsg(summary);
+    try{
+      var review = await AgentRunner.callReview();
+      showReviewReport(review);
+    }catch(e){
+      // callReview returns null on failure; showReviewReport handles null
+      showReviewReport(null);
+    }
+  },800);
+}
+
+function showTyping(){
+  var a=document.getElementById('chatArea'),d=document.createElement('div');
+  d.className='msg agent';d.id='typingIndicator';
+  d.innerHTML='<div class="msg-bubble" style="display:flex;gap:4px;padding:10px 16px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+  a.appendChild(d);a.scrollTop=a.scrollHeight;
+}
+function removeTyping(){
+  var t=document.getElementById('typingIndicator');if(t)t.remove();
+}
+
+// ========== TRAINING MODE ==========
+function startTrainingSelect(){
+  state.mode='training';state.selectedRelation=null;state.selectedScenario=null;navigateTo('training-select');
+  document.getElementById('btnStartTraining').disabled=true;
+  document.getElementById('scenarioList').innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">↑ 请先选择关系类型</p>';
+  document.querySelectorAll('.select-card').forEach(function(c){c.classList.remove('selected')})
+}
+function selectRelation(rel,el){
+  state.selectedRelation=rel;state.selectedScenario=null;document.getElementById('btnStartTraining').disabled=true;
+  document.querySelectorAll('#relationGrid .select-card').forEach(function(c){c.classList.remove('selected')});el.classList.add('selected');
+  var scenarios=allScenarios[rel],list=document.getElementById('scenarioList');
+  list.innerHTML=scenarios.map(function(s){return '<div class="scenario-item" onclick="selectScenario(\''+s.id+'\',this)" data-id="'+s.id+'"><span class="si-icon">'+s.icon+'</span><span class="si-name">'+s.name+'</span><span class="si-diff">'+s.diff+'</span></div>'}).join('')
+}
+function selectScenario(id,el){
+  state.selectedScenario=id;document.getElementById('btnStartTraining').disabled=false;
+  document.querySelectorAll('#scenarioList .scenario-item').forEach(function(i){i.classList.remove('selected')});el.classList.add('selected')
+}
+// ========== TRAINING ENGINE ==========
+function startTraining(){
+  if(!state.selectedScenario)return;
+  state.currentVariant=1;state.mode='training';state.levelResults=[];resetState();navigateTo('chat');
+  AgentState.reset();AgentState.initSession('training');AgentState.currentVariant=1;
+  var sc=findScenarioInfo();
+  var method=sc.method||'非暴力沟通';
+  state.trainingMethod=method;
+  // Use sandbox 5-level model (not method-specific sub-steps)
+  var lvls=state.currentVariant>1?['看见自己','换方式','稳住']:state.sandboxLevels;
+  state.trainingSteps=lvls.map(function(n){return {name:n,type:'agent_level'}});
+  state.currentTrainingStep=0;
+  // Track sandbox level number (1-based, maps to agent's currentLevel)
+  state._sandboxStepToLevel=function(idx){return state.currentVariant>1?idx+2:idx+1};
+  state._sandboxLevelToStep=function(lvl){return state.currentVariant>1?lvl-2:lvl-1};
+  if(settings.apiKey){AgentState.currentMethod=method;AgentState.currentLevel=1}
+  document.getElementById('navTitle').textContent='沙盘 · 第1变体';
+  renderTrainingDots(state.trainingSteps);
+  setTimeout(runCurrentStep,600);
+}
+function renderTrainingDots(steps){
+  var stepNames=steps.map(function(s){return s.name});
+  var total=stepNames.length;
+  var gapW=total>6?8:20;
+  var chat=document.getElementById('chatArea');
+  document.getElementById('progressBar').style.width='0%';
+  chat.innerHTML='<div style="display:flex;justify-content:center;align-items:center;gap:4px;padding:4px 0 8px;flex-wrap:wrap">'+
+    stepNames.map(function(n,i){return '<span style="display:inline-block;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-size:10px;font-weight:700;background:'+(i===0?'var(--purple)':'var(--border)')+';color:'+(i===0?'white':'var(--text-muted)')+'" class="lvldot" data-lvl="'+(i+1)+'">'+(i+1)+'</span>'+(i<total-1?'<span style="width:'+gapW+'px;height:1px;background:var(--border);flex-shrink:1"></span>':'')}).join('')+
+    '</div><div style="display:flex;justify-content:space-between;padding:0 4px 8px;font-size:8px;color:var(--text-muted)">'+stepNames.map(function(n){return '<span>'+n+'</span>'}).join('')+'</div>';
+}
+
+// ---- Main dispatcher ----
+function runCurrentStep(){
+  var idx=state.currentTrainingStep;
+  if(!state.trainingSteps||idx>=state.trainingSteps.length){console.error('runCurrentStep: index out of bounds',idx,state.trainingSteps);addAgentMsg('⚠️ 训练结束，返回首页吧。');setTimeout(goHome,1500);return}
+  var step=state.trainingSteps[idx];
+  var lvl=state._sandboxStepToLevel(idx);
+  var total=state.trainingSteps.length;
+  setTimeout(function(){addSystemMsg('第'+lvl+'关：'+step.name,true)},300);
+  // For sandbox: level 1 = choice step runs locally, others handled by agent
+  if(idx===0&&state.currentVariant===1){
+    runChoiceStep();
+  } else if(step.type==='agent_level'){
+    // Agent will handle — trigger initial prompt based on level name
+    if(step.name==='看见自己'){
+      runReflectStep();
+    } else if(step.name==='换方式'){
+      runPracticeStep({instruction:'用学到的方法回应同样的场景。准备好了就输入。'});
+    } else if(step.name==='稳住'){
+      var sc=findScenarioInfo();
+      addResistPrompt(sc);
+    } else if(step.name==='迁移'){
+      var sc2=findScenarioInfo();
+      addTransferPrompt(sc2);
+    }
+  } else {
+    // Fallback for legacy steps
+    switch(step.type){
+      case 'reflect': runReflectStep(); break;
+      case 'practice': runPracticeStep(step); break;
+      case 'resist': runResistStep(); break;
+      case 'transfer': runTransferStep(); break;
+    }
+  }
+}
+// Helper: show resist prompt without blocking
+function addResistPrompt(sc){
+  var fmap={
+    'w1':'你解释后，对方说："说这些没用，我就问你这方案能不能用？"',
+    'w2':'你接受反馈后，对方说："行吧，你自己看着调整，别让我再说第二遍"',
+    'w3':'你说出事实后，对方说："你就给我一个准话，到底什么时候？"',
+    'w4':'你表达后，对方说："全组都在加班，就你事情多？"',
+    'w5':'你摆出事实后，对方说："那你就是说我冤枉你了？"',
+    'w6':'你降维后，对方说："说真的，你那套确实不行"',
+    'w7':'你婉拒后，对方说："这么点忙都不肯帮？"',
+    'w8':'你谦逊回应后，旁边同事说："那是运气好而已吧"',
+    'w9':'你重新表达后，对方说："我们刚才已经讨论过了"',
+    'w10':'你锚定事实后，对方说："你怎么这么较真？"',
+    'p1':'你回应后，对方说："你每次都这么说，有用吗？"',
+    'p2':'你主动沟通后，对方回："没什么好说的。"',
+    'p3':'你说出感受后，对方说："算了，当我没说。"',
+    'p4':'你大方接受后，对方笑着说："你这么客气干嘛，我都不习惯了"',
+    'p5':'你自然回应后，旁边有人起哄："那你还不得请客啊！"',
+    'p6':'你解释后，对方说："那你倒是说说，为什么别人消息你就回得快？"',
+    'p7':'你回应后，对方说："我说一下怎么了？别人是别人你是你"',
+    'p8':'你道歉后，对方冷冷地说："道歉有用吗？你根本没放在心上"',
+    'p9':'你回应后，对方叹了口气："唉，算了，说这些也没意思"',
+    'p10':'你表达后，对方说："你就是嫌我管太多了是吧？"',
+    'f1':'你婉拒后，对方说："这么点钱都不肯帮？"',
+    'f2':'你降维后，对方冷笑："说真的，你是不是觉得自己很厉害？"',
+    'fm1':'你回应后，对方说："我这都是为你好，你以后就知道了"',
+    'fm2':'你划清边界后，对方说："你翅膀硬了是吧？"'
+  };
+  var f=fmap[state.selectedScenario]||'对方没有退让："这就是你的态度？"';
+  setTimeout(function(){addAgentMsg('💪 对方没有退让，他说：<br><strong>"'+f+'"</strong><br><br>你没有退，怎么回？守住边界，但不攻击。');document.getElementById('btnSend').disabled=false},900);
+}
+// Helper: show transfer prompt without blocking
+function addTransferPrompt(sc){
+  var method=state.trainingMethod;
+  var t;
+  if(sc.id.match(/^w/))t='朋友说"感觉你最近不太一样了"';
+  else if(sc.id.match(/^p/))t='同事说"这个是你做的吧？有些地方不太对"';
+  else if(sc.id.match(/^f/))t='家人说"你弟弟的事你也不管管"';
+  else t='同事在群里说"这个进度是不是有问题？"';
+  setTimeout(function(){addAgentMsg('换个场景，换个人——<strong>'+t+'</strong><br><br>用「'+method+'」的方法，怎么回应？');document.getElementById('btnSend').disabled=false},900);
+}
+function advanceStep(){
+  var idx=state.currentTrainingStep;
+  if(!state.trainingSteps||idx>=state.trainingSteps.length){console.error('advanceStep: index out of bounds',idx,state.trainingSteps);addAgentMsg('⚠️ 训练流程出错，请返回重试。');return}
+  var lvl=state._sandboxStepToLevel(idx);
+  state.levelResults.push({step:lvl,name:state.trainingSteps[idx].name,passed:true});
+  updateLevelDots(idx+1);
+  state.currentTrainingStep++;
+  var total=state.trainingSteps.length;
+  // Progress bar: use completed level count / total (after this step is done)
+  document.getElementById('progressBar').style.width=Math.round(((idx+1)/total)*100)+'%';
+  if(state.currentTrainingStep>=total){
+    document.getElementById('progressBar').style.width='100%';
+    addAgentMsg('🎉 训练完成！请查看上方的复盘报告。');
+    state.chatComplete = true;
+  }else{setTimeout(runCurrentStep,2000)}
+}
+
+// ---- CHOICE step (场景化听懂) ----
+function runChoiceStep(){
+  var sc=findScenarioInfo();
+  var opts=sc.lvl1;
+  var labels='ABCDEFGH'.split('');
+  var html='<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">';
+  for(var i=0;i<opts.length;i++){
+    html+='<div style="background:var(--card);border:1px solid var(--border);padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer" onclick="handleChoice('+i+',this)">'+labels[i]+'. '+opts[i].text+'</div>';
+  }
+  html+='<div id="lvl1Ct" style="background:var(--card);border:1px solid var(--border);padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer" onclick="showLvl1Custom()">✏️ 其他（输入你的理解）</div>';
+  html+='<div id="lvl1Ci" style="display:none;padding:4px 0"><input id="lvl1CtT" placeholder="输入你自己的理解…" style="width:100%;padding:8px;border:1px solid var(--purple);border-radius:8px;font-size:13px;background:white;box-sizing:border-box"><button onclick="submitLvl1Custom()" style="margin-top:6px;padding:8px 16px;background:var(--purple);color:white;border:none;border-radius:8px;font-size:12px">提交</button></div>';
+  html+='</div>';
+  var isQuote=sc.desc.indexOf('"')===0;
+  var prefix=isQuote?'对方说：':'场景：';
+  var prompt=isQuote?'这句话可能有几层意思。你觉得哪些是对的？':'你觉得对方为什么这样？哪些理解是对的？';
+  setTimeout(function(){addAgentMsg(prefix+'<strong>'+sc.desc+'</strong><br><br>'+prompt+'<br><br>'+html)},900);
+}
+function handleChoice(idx,el){
+  disableAllOptions();
+  var sc=findScenarioInfo();
+  var opt=sc.lvl1[idx];
+  if(!opt.correct){
+    el.style.background='var(--coral-light)';el.style.borderColor='var(--coral)';
+    setTimeout(function(){addAgentMsg('再想想：把情绪解读放一边，只看话本身最直接的意思。');enableAllOptions()},400);
+  }else{
+    el.style.background='var(--teal-light)';el.style.borderColor='var(--teal)';
+    var items=document.querySelectorAll('#chatArea [onclick*="handleChoice"]');
+    for(var i=0;i<items.length;i++){
+      if(i>=sc.lvl1.length)break;
+      if(sc.lvl1[i].correct){
+        items[i].style.background='var(--teal-light)';items[i].style.borderColor='var(--teal)';
+      }else{items[i].style.opacity='0.35'}
+    }
+    var corrects=sc.lvl1.filter(function(o){return o.correct}).map(function(o){return o.text});
+    setTimeout(function(){addAgentMsg('✅ 核心是：<strong>"'+corrects.join('"、"')+'"</strong><br><br>剩下的选项是情绪解读。很多时候我们不是不会回，是先把话听歪了。<br><br>🎯 通过！');advanceStep()},500);
+  }
+}
+function disableAllOptions(){document.querySelectorAll('#chatArea [style*="cursor:pointer"]').forEach(function(e){e.style.pointerEvents='none'})}
+function enableAllOptions(){document.querySelectorAll('#chatArea [style*="cursor:pointer"]').forEach(function(e){e.style.pointerEvents='auto'})}
+function showLvl1Custom(){
+  document.getElementById('lvl1Ct').style.display='none';
+  document.getElementById('lvl1Ci').style.display='block';
+  document.getElementById('lvl1CtT').focus();
+}
+function submitLvl1Custom(){
+  var t=document.getElementById('lvl1CtT').value.trim();
+  if(!t)return;
+  disableAllOptions();
+  document.getElementById('lvl1Ci').style.display='none';
+  document.getElementById('lvl1Ct').style.display='block';
+  document.getElementById('lvl1Ct').style.background='var(--teal-light)';
+  document.getElementById('lvl1Ct').style.borderColor='var(--teal)';
+  document.getElementById('lvl1Ct').textContent='✏️ 你的理解：'+t;
+  setTimeout(function(){addAgentMsg('✅ 你的理解："<strong>'+t+'</strong>"<br><br>每个人理解可能不同——重要的是你没有被情绪带着走。<br><br>🎯 通过！');advanceStep()},400);
+}
+function findScenarioInfo(){for(var rel in allScenarios){var f=allScenarios[rel].find(function(s){return s.id===state.selectedScenario});if(f)return f}return workplaceScenarios[0]}
+
+// ---- REFLECT step (看见自己) ----
+function runReflectStep(){
+  setTimeout(function(){addAgentMsg('现在不要想"应该怎么回"。<br><br>你的<strong>第一反应</strong>是什么？脱口而出的那种——不要修饰，不要想"对错"。');document.getElementById('btnSend').disabled=false},900);
+}
+
+// ---- PRACTICE step (通用方法练习) ----
+function runPracticeStep(step){
+  var instr=step.instruction||'用这个方法回应对方。准备好了就输入。';
+  setTimeout(function(){addAgentMsg(instr);document.getElementById('btnSend').disabled=false},900);
+}
+
+// ---- RESIST step (压力测试) ----
+function runResistStep(){
+  addResistPrompt(findScenarioInfo());
+}
+
+// ---- TRANSFER step (迁移) ----
+function runTransferStep(){
+  addTransferPrompt(findScenarioInfo());
+}
+
+// ========== HELPERS ==========
+function addAgentMsg(html){var a=document.getElementById('chatArea'),d=document.createElement('div');d.className='msg agent';d.innerHTML='<div class="msg-bubble">'+html+'</div>';a.appendChild(d);a.scrollTop=a.scrollHeight}
+function addUserMsg(text){var a=document.getElementById('chatArea'),d=document.createElement('div');d.className='msg user';d.innerHTML='<div class="msg-bubble">'+text.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';a.appendChild(d);a.scrollTop=a.scrollHeight}
+function addSystemMsg(text,isStep){var a=document.getElementById('chatArea'),d=document.createElement('div');d.className='msg system'+(isStep?' step-label':'');d.textContent=text;a.appendChild(d);a.scrollTop=a.scrollHeight}
+function updateLevelDots(lvl){document.querySelectorAll('#chatArea .lvldot').forEach(function(d){var l=parseInt(d.dataset.lvl);if(l<=lvl){d.style.background='var(--teal)';d.style.color='white'}});var n=document.querySelector('#chatArea .lvldot[data-lvl="'+(lvl+1)+'"]');if(n){n.style.background='var(--purple)';n.style.color='white'}}
+function showToast(msg){var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
+
+// ========== SETTINGS ==========
+function showSettings(e){if(e){e.stopPropagation();e.preventDefault()}loadSettings();document.getElementById('settingsBaseUrl').value=settings.baseUrl;document.getElementById('settingsApiKey').value=settings.apiKey;document.getElementById('settingsModel').value=settings.model;document.getElementById('settingsModal').style.display='flex'}
+function hideSettings(){document.getElementById('settingsModal').style.display='none'}
+function saveSettings(){hideSettings();showToast('✅ AI 对话教练已就绪')}
+function clearHistory(){if(confirm('确定清除所有练习记录？')){localStorage.removeItem('tt_records');hideSettings();loadRecentRecords()}}
+// Auto-resize textarea
+document.getElementById('chatInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
+
+// ========== SESSION RECORDS ==========
+function saveSessionRecord(reportHTML) {
+  var sc = findScenarioInfo();
+  if (!sc) return;
+  var records = [];
+  try { records = JSON.parse(localStorage.getItem('tt_records') || '[]'); } catch(e) {}
+  
+  // Use captured chat HTML directly — don't read from DOM
+  var chatHTML = state.recentChatHTML || '';
+  
+  var record = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    sceneName: sc.name,
+    sceneDesc: sc.desc,
+    method: state.trainingMethod || AgentState.currentMethod || '非暴力沟通',
+    grade: state._reviewGrade || (function(){
+      var p = state.userPattern || '防御型';
+      var sm = {'建设型':'A','防御型':'B+','讨好型':'B','回避型':'B-','被动攻击型':'C+'};
+      return sm[p] || 'B';
+    })(),
+    userPattern: state.userPattern || '防御型',
+    variant: state.currentVariant || 1,
+    totalSteps: state.trainingSteps ? state.trainingSteps.length : 0,
+    chatHTML: chatHTML,
+    reportHTML: reportHTML || ''
+  };
+  records.unshift(record); // newest first
+  if (records.length > 20) records = records.slice(0, 20);
+  localStorage.setItem('tt_records', JSON.stringify(records));
+}
+
+function saveNowSessionRecord(reportHTML) {
+  var records = [];
+  try { records = JSON.parse(localStorage.getItem('tt_records') || '[]'); } catch(e) {}
+  
+  var record = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    sceneName: '此刻急救',
+    sceneDesc: state.userScenario || '即时场景',
+    method: state.trainingMethod || AgentState.currentMethod || '非暴力沟通',
+    grade: state._reviewGrade || 'B+',
+    userPattern: state.userPattern || '防御型',
+    variant: 0,
+    totalSteps: 4,
+    chatHTML: state.recentChatHTML || '',
+    reportHTML: reportHTML || ''
+  };
+  records.unshift(record);
+  if (records.length > 20) records = records.slice(0, 20);
+  localStorage.setItem('tt_records', JSON.stringify(records));
+}
+
+function loadRecentRecords() {
+  var records = [];
+  try { records = JSON.parse(localStorage.getItem('tt_records') || '[]'); } catch(e) {}
+  var list = document.getElementById('recentList');
+  if (!list) return;
+  
+  if (records.length === 0) {
+    list.innerHTML = '<div class="recent-empty">还没有练习记录<br><span style="font-size:12px;color:var(--text-muted)">去沙盘完成一次训练吧</span></div>';
+    return;
+  }
+  
+  // Show last 5 records
+  var html = '';
+  var gradeColors = {'A': 'green', 'B+': 'purple', 'B': 'amber', 'B-': 'red', 'C+': 'red'};
+  for (var i = 0; i < Math.min(records.length, 5); i++) {
+    var r = records[i];
+    var d = new Date(r.date);
+    var timeAgo = getTimeAgo(d);
+    var dotColor = gradeColors[r.grade] || 'amber';
+    var stepsLabel = r.grade === 'A' ? '全部通过' : (r.totalSteps ? r.totalSteps + '步训练' : '');
+    var variantLabel = r.variant > 1 ? '变体' + r.variant : '';
+    html += '<div class="recent-item" onclick="viewSessionRecord(' + r.id + ')" style="margin-top:8px">' +
+      '<div class="ri-dot ' + dotColor + '"></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(r.sceneName) + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + timeAgo + ' · ' + r.method + (variantLabel ? ' · ' + variantLabel : '') + '</div></div>' +
+      '<span style="margin-left:auto;font-size:13px;font-weight:700;color:var(--' + dotColor + ')">' + r.grade + '</span>' +
+    '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function viewSessionRecord(id) {
+  var records = [];
+  try { records = JSON.parse(localStorage.getItem('tt_records') || '[]'); } catch(e) {}
+  var rec = null;
+  for (var i = 0; i < records.length; i++) {
+    if (records[i].id === id) { rec = records[i]; break; }
+  }
+  if (!rec) return;
+  
+  // Set nav
+  document.getElementById('navTitle').textContent = rec.sceneName;
+  document.getElementById('navBack').classList.add('visible');
+  
+  // Override back button behavior for this view
+  state._prevBackHandler = goBack;
+  state._detailViewActive = true;
+  
+  var d = new Date(rec.date);
+  var timeStr = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+  
+  // Build detail page
+  var chatHTML = rec.chatHTML || '';
+  var replays = extractReplayMessages(chatHTML);
+  var replayHTML = '<div class="chat-replay"><h4>💬 练习过程</h4>';
+  if (replays.length === 0) {
+    replayHTML += '<p style="font-size:13px;color:var(--text-muted);padding:8px">暂无对话记录</p>';
+  } else {
+    for (var j = 0; j < replays.length; j++) {
+      var m = replays[j];
+      replayHTML += '<div class="replay-msg ' + m.type + '"><span class="replay-label">' + m.label + '</span><span>' + escHtml(m.text) + '</span></div>';
+    }
+  }
+  replayHTML += '</div>';
+
+  // Report: handle both empty string and null
+  var reportContent = rec.reportHTML || '';
+  if (!reportContent || reportContent.trim() === '') {
+    reportContent = '<div class="report-card"><p style="font-size:13px;color:var(--text-muted)">暂无复盘报告</p></div>';
+  }
+  
+  var content = document.getElementById('sessionDetailContent');
+  content.innerHTML = '<div style="margin-bottom:16px;color:var(--text-muted);font-size:13px">' + timeStr + ' · ' + rec.method + (rec.variant ? ' · 变体' + rec.variant : '') + '</div>' +
+    reportContent +
+    '<div style="margin-top:8px">' + replayHTML + '</div>' +
+    '<button class="btn-primary" onclick="goHome()" style="margin-top:12px">返回首页</button>';
+  
+  // Show detail screen
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById('screen-session-detail').classList.add('active');
+  state.screen = 'session-detail';
+}
+
+function extractReplayMessages(html) {
+  var msgs = [];
+  if (!html || html.trim() === '') return msgs;
+  
+  // Try to parse structured messages from the chat HTML
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  
+  // Primary: look for .msg containers
+  var items = tmp.querySelectorAll('.msg');
+  if (items.length === 0) {
+    // Fallback: look for .msg-bubble directly
+    items = tmp.querySelectorAll('.msg-bubble');
+  }
+  
+  items.forEach(function(el) {
+    var type = 'agent';
+    var label = '教练';
+    if (el.classList.contains('user')) { type = 'user'; label = '你'; }
+    else if (el.classList.contains('system') || el.classList.contains('step-label')) { type = 'system'; label = '系统'; }
+    // Also check parent for class
+    var parent = el.parentElement;
+    if (parent && parent.classList.contains('user')) { type = 'user'; label = '你'; }
+    else if (parent && (parent.classList.contains('system') || parent.classList.contains('step-label'))) { type = 'system'; label = '系统'; }
+    
+    // Get text content
+    var text = el.textContent || el.innerText || '';
+    text = text.replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    if (text.length > 200) text = text.substring(0, 200) + '…';
+    
+    msgs.push({ type: type, label: label, text: text });
+  });
+  
+  return msgs;
+}
+
+function getTimeAgo(d) {
+  return formatDateTime(d);
+}
+
+function formatDateTime(d) {
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  var h = String(d.getHours()).padStart(2, '0');
+  var min = String(d.getMinutes()).padStart(2, '0');
+  var s = String(d.getSeconds()).padStart(2, '0');
+  return y + '-' + m + '-' + day + ' ' + h + ':' + min + ':' + s;
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ========== INIT ==========
+loadSettings();
+console.log('TakeTwo: Agent 模式就绪，模型='+settings.model);
+</script>
+</body>
+</html>
