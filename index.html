@@ -299,10 +299,10 @@ html,body{
       <input class="form-input" id="settingsBaseUrl" readonly>
       <div class="form-hint">已预置，无需修改</div>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="settingsApiKeyGroup">
       <label class="form-label">API Key</label>
-      <input class="form-input" id="settingsApiKey" type="password" readonly>
-      <div class="form-hint">已预置，无需修改</div>
+      <input class="form-input" id="settingsApiKey" type="password">
+      <div class="form-hint" id="settingsApiKeyHint">已预置，无需修改</div>
     </div>
     <div class="form-group">
       <label class="form-label">模型</label>
@@ -332,16 +332,31 @@ const state={
   // Sandbox level names (shared with agent)
   sandboxLevels:['听懂','看见自己','换方式','稳住','迁移']
 };
-// Settings — 自动检测环境：iOS 原生壳走直连，浏览器走 Worker 代理
+// Settings — Web 端强制走 Cloudflare Worker 代理，API Key 绝不暴露在前端代码中
 const IS_IOS_NATIVE=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.apiProxy);
 const PROXY_URL='https://taketwo-proxy.taketwo.workers.dev';
 let settings={
-  baseUrl:IS_IOS_NATIVE?'https://api.deepseek.com':PROXY_URL,
-  apiKey:IS_IOS_NATIVE?'sk-fd2be06837cb42fcbeb2d2a88fb3ff0d':'proxy',
+  baseUrl: IS_IOS_NATIVE ? 'https://api.deepseek.com' : PROXY_URL,
+  apiKey: '',           // 不再硬编码；iOS 原生壳请在设置页输入，Web 端由 Worker 代理
   model:'deepseek-v4-flash'
 };
-function loadSettings(){/* 配置已预置，无需从 localStorage 读取 */}
-function saveSettingsToStorage(){/* 配置已预置，无需持久化 */}
+function loadSettings(){
+  // 仅允许 iOS 原生壳从 localStorage 读取用户自填的 Key
+  if(!IS_IOS_NATIVE) return;
+  try{
+    var saved=localStorage.getItem('taketwo_settings');
+    if(saved){
+      var parsed=JSON.parse(saved);
+      if(parsed.apiKey) settings.apiKey=parsed.apiKey;
+      if(parsed.baseUrl) settings.baseUrl=parsed.baseUrl;
+      if(parsed.model) settings.model=parsed.model;
+    }
+  }catch(e){}
+}
+function saveSettingsToStorage(){
+  if(!IS_IOS_NATIVE) return;
+  try{localStorage.setItem('taketwo_settings',JSON.stringify(settings));}catch(e){}
+}
 // Error trap
 window.onerror=function(msg,url,line,col,err){
   try{
@@ -1122,9 +1137,9 @@ function updateLevelDots(lvl){document.querySelectorAll('#chatArea .lvldot').for
 function showToast(msg){var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
 
 // ========== SETTINGS ==========
-function showSettings(e){if(e){e.stopPropagation();e.preventDefault()}loadSettings();document.getElementById('settingsBaseUrl').value=settings.baseUrl;document.getElementById('settingsApiKey').value=settings.apiKey;document.getElementById('settingsModel').value=settings.model;document.getElementById('settingsModal').style.display='flex'}
+function showSettings(e){if(e){e.stopPropagation();e.preventDefault()}loadSettings();document.getElementById('settingsBaseUrl').value=settings.baseUrl;document.getElementById('settingsModel').value=settings.model;var keyInput=document.getElementById('settingsApiKey');var keyHint=document.getElementById('settingsApiKeyHint');if(IS_IOS_NATIVE){keyInput.value=settings.apiKey;keyInput.readOnly=false;keyHint.textContent='iOS 直连模式：请输入你的 DeepSeek API Key'}else{keyInput.value='(由 Cloudflare Worker 代理，无需填写)';keyInput.readOnly=true;keyHint.textContent='Web 端通过 Worker 代理调用，Key 不会暴露在前端'}document.getElementById('settingsModal').style.display='flex'}
 function hideSettings(){document.getElementById('settingsModal').style.display='none'}
-function saveSettings(){hideSettings();showToast('✅ AI 对话教练已就绪')}
+function saveSettings(){if(IS_IOS_NATIVE){settings.apiKey=document.getElementById('settingsApiKey').value.trim();saveSettingsToStorage()}hideSettings();showToast('✅ 设置已保存')}
 function clearHistory(){if(confirm('确定清除所有练习记录？')){localStorage.removeItem('tt_records');hideSettings();loadRecentRecords()}}
 // Auto-resize textarea
 document.getElementById('chatInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});

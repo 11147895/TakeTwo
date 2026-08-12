@@ -688,11 +688,13 @@ const AgentRunner = {
    * 调用 LLM API
    */
   async _callAPI(messages) {
-    if (!settings.apiKey) {
+    const baseUrl = settings.baseUrl || 'https://api.deepseek.com';
+    const isProxy = baseUrl.includes('workers.dev');
+    // 只有直连 DeepSeek 时才需要前端持有 Key；Worker 代理在服务端用环境变量里的 Key
+    if (!isProxy && !settings.apiKey) {
       return '⚠️ 请先在「设置」中配置 API Key，然后重试。';
     }
 
-    const baseUrl = settings.baseUrl || 'https://api.deepseek.com';
     const url = `${baseUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
     try {
