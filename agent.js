@@ -12,6 +12,199 @@
  *   - 加新方法 = 更新 skills.js 的 METHOD_SKILLS，Agent 无需改动
  */
 
+// ========== 0. HarnessGuard — 熔断 + 重试 + 超时 ==========
+const HarnessGuard = {
+  _failures: 0,
+  _circuitOpen: false,
+  _circuitOpenAt: 0,
+
+  config: {
+    maxRetries: 2,
+    retryBaseDelay: 1000,
+    requestTimeout: 30000,
+    circuitThreshold: 3,
+    circuitResetMs: 60000
+  },
+
+  isCircuitOpen() {
+    if (!this._circuitOpen) return false;
+    if (Date.now() - this._circuitOpenAt > this.config.circuitResetMs) {
+      this._circuitOpen = false;
+      this._failures = 0;
+      console.log('[HarnessGuard] 熔断恢复，重新尝试');
+      return false;
+    }
+    return true;
+  },
+
+  recordSuccess() {
+    this._failures = 0;
+    this._circuitOpen = false;
+  },
+
+  recordFailure() {
+    this._failures++;
+    if (this._failures >= this.config.circuitThreshold) {
+      this._circuitOpen = true;
+      this._circuitOpenAt = Date.now();
+      console.warn('[HarnessGuard] 熔断器打开，60s 内不再请求');
+    }
+  },
+
+  async fetchWithTimeout(url, options) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(function() { controller.abort(); }, this.config.requestTimeout);
+    try {
+      var opts = Object.assign({}, options, { signal: controller.signal });
+      var resp = await fetch(url, opts);
+      clearTimeout(timeoutId);
+      return resp;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') throw new Error('REQUEST_TIMEOUT');
+      throw e;
+    }
+  },
+
+  async callWithRetry(fn) {
+    if (this.isCircuitOpen()) {
+      throw new Error('SERVICE_UNAVAILABLE');
+    }
+    var lastError;
+    for (var attempt = 0; attempt <= this.config.maxRetries; attempt++) {
+      try {
+        var result = await fn();
+        this.recordSuccess();
+        return result;
+      } catch (e) {
+        lastError = e;
+        if (e.message === 'CORS_ERROR' || e.message === 'SERVICE_UNAVAILABLE') {
+          throw e;
+        }
+        if (e.message && e.message.indexOf('API 错误 4') > -1 && e.message.indexOf('429') === -1) {
+          this.recordFailure();
+          throw e;
+        }
+        if (attempt < this.config.maxRetries) {
+          var delay = this.config.retryBaseDelay * Math.pow(2, attempt);
+          console.warn('[HarnessGuard] 第 ' + (attempt + 1) + ' 次失败，' + delay + 'ms 后重试: ' + e.message);
+          await new Promise(function(r) { setTimeout(r, delay); });
+        }
+      }
+    }
+    this.recordFailure();
+    throw lastError;
+  }
+};
+
+// ========== 0.5 OutputValidator — 输出校验 + Fallback 推断 ==========
+const OutputValidator = {
+
+  parse(raw, context) {
+    var stateRegex = /<!--STATE:(.*?)-->/;
+    var match = raw.match(stateRegex);
+    var stateUpdate = null;
+    var hasMarker = false;
+
+    if (match) {
+      hasMarker = true;
+      stateUpdate = this._parseStateTag(match[1]);
+      if (!this._validateState(stateUpdate, context)) {
+        console.warn('[OutputValidator] STATE 标记格式异常，尝试 fallback');
+        stateUpdate = this._inferFromText(raw, context);
+      }
+    } else {
+      console.warn('[OutputValidator] 未检测到 STATE 标记，启动 fallback 推断');
+      stateUpdate = this._inferFromText(raw, context);
+    }
+
+    if (stateUpdate) {
+      stateUpdate._inferred = !hasMarker;
+    }
+
+    var cleanText = raw.replace(/<!--STATE:.*?-->/g, '').trim();
+    return { cleanText: cleanText, stateUpdate: stateUpdate };
+  },
+
+  _parseStateTag(tag) {
+    var parts = tag.split('|');
+    var state = {
+      mode: parts[0],
+      phase: parts[1],
+      detail: parts[2] || null,
+      extra: parts[3] || null
+    };
+    var methodMatch = tag.match(/method:([^|]+)/);
+    if (methodMatch) state.method = methodMatch[1];
+    var rmMatch = tag.match(/reaction_mode:([^|]+)/);
+    if (rmMatch) state.reactionMode = rmMatch[1];
+    return state;
+  },
+
+  _validateState(state, ctx) {
+    if (!state || !state.mode) return false;
+    if (state.mode !== 'now' && state.mode !== 'training') return false;
+    if (!state.phase) return false;
+    return true;
+  },
+
+  _inferFromText(text, ctx) {
+    if (!ctx) ctx = {};
+    var mode = ctx.mode || AgentState.mode;
+
+    if (mode === 'now') {
+      var nowPhase = ctx.nowPhase || AgentState.nowPhase;
+
+      if (nowPhase === 'input') {
+        var methods = (typeof getMethodNames === 'function') ? getMethodNames() : [];
+        for (var i = 0; i < methods.length; i++) {
+          var sk = (typeof getSkill === 'function') ? getSkill(methods[i]) : null;
+          if (sk && text.indexOf(sk.name) > -1) {
+            return { mode: 'now', phase: 'nvc', detail: '1', extra: '', method: methods[i], _inferred: true };
+          }
+        }
+        return { mode: 'now', phase: 'input', detail: '0', extra: null, _inferred: true };
+      }
+
+      var stepNum = parseInt(ctx.stepNumber) || AgentState.stepNumber || 1;
+      if (/完成|很好|过关|对了.*下一步|进入下一步|我们来看下一步/.test(text)) {
+        var next = stepNum + 1;
+        if (next > 4) return { mode: 'now', phase: 'complete', detail: '4', extra: null, _inferred: true };
+        return { mode: 'now', phase: 'nvc', detail: String(next), extra: '', _inferred: true };
+      }
+
+      return {
+        mode: 'now',
+        phase: 'nvc',
+        detail: String(stepNum),
+        extra: ctx.currentStep || AgentState.currentStep || '',
+        _inferred: true
+      };
+    }
+
+    if (mode === 'training') {
+      var levelMatch = text.match(/第\s*(\d)\s*关/);
+      if (levelMatch) {
+        var level = parseInt(levelMatch[1]);
+        var names = ['听懂', '看见自己', '换方式', '稳住', '迁移'];
+        return { mode: 'training', phase: 'level', detail: String(level), extra: names[level - 1] || '', _inferred: true };
+      }
+      if (/训练完成|全部通关|恭喜.*完成|五关.*通过/.test(text)) {
+        return { mode: 'training', phase: 'complete', detail: '5', extra: null, _inferred: true };
+      }
+      return {
+        mode: 'training',
+        phase: 'level',
+        detail: String(ctx.currentLevel || AgentState.currentLevel || 1),
+        extra: '',
+        _inferred: true
+      };
+    }
+
+    return null;
+  }
+};
+
 // ========== 1. Agent 状态管理器 ==========
 const AgentState = {
   // 会话信息
@@ -42,6 +235,7 @@ const AgentState = {
   
   // 初始化
   initSession(mode) {
+    this.clearSaved();
     this.sessionId = 'tt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     this.mode = mode;
     this.conversationHistory = [];
@@ -64,6 +258,7 @@ const AgentState = {
   },
   
   reset() {
+    this.clearSaved();
     this.sessionId = null;
     this.mode = null;
     this.nowPhase = null;
@@ -83,14 +278,95 @@ const AgentState = {
   
   addMessage(role, content) {
     this.conversationHistory.push({ role, content });
-    // Keep last 30 messages for context
-    if (this.conversationHistory.length > 30) {
-      this.conversationHistory = this.conversationHistory.slice(-30);
+    if (this.conversationHistory.length > 20) {
+      this._compressHistory();
     }
+    this.save();
   },
   
   getUserScenario() {
     return this.userScenario;
+  },
+
+  save() {
+    try {
+      var snapshot = {
+        sessionId: this.sessionId,
+        mode: this.mode,
+        nowPhase: this.nowPhase,
+        userScenario: this.userScenario,
+        currentMethod: this.currentMethod,
+        currentStep: this.currentStep,
+        stepNumber: this.stepNumber,
+        stepAnswers: this.stepAnswers,
+        retriesPerStep: this.retriesPerStep,
+        currentLevel: this.currentLevel,
+        levelResults: this.levelResults,
+        currentVariant: this.currentVariant,
+        selectedScenario: this.selectedScenario,
+        selectedRelation: this.selectedRelation,
+        userPattern: this.userPattern,
+        conversationHistory: this.conversationHistory,
+        isComplete: this.isComplete,
+        reviewData: this.reviewData,
+        _savedAt: Date.now()
+      };
+      try { localStorage.setItem('tt_session', JSON.stringify(snapshot)); } catch(e) {}
+    } catch(e) {
+      console.warn('[AgentState] 保存失败:', e);
+    }
+  },
+
+  restore() {
+    try {
+      var raw = null;
+      try { raw = localStorage.getItem('tt_session'); } catch(e) { return false; }
+      if (!raw) return false;
+      var snapshot = JSON.parse(raw);
+      if (snapshot._savedAt && Date.now() - snapshot._savedAt > 2 * 60 * 60 * 1000) {
+        try { localStorage.removeItem('tt_session'); } catch(e) {}
+        console.log('[AgentState] 快照已过期（>2h），不恢复');
+        return false;
+      }
+      Object.assign(this, snapshot);
+      delete this._savedAt;
+      console.log('[AgentState] 恢复成功，mode=' + this.mode + ' sessionId=' + this.sessionId);
+      return true;
+    } catch(e) {
+      console.warn('[AgentState] 恢复失败:', e);
+      return false;
+    }
+  },
+
+  clearSaved() {
+    try { localStorage.removeItem('tt_session'); } catch(e) {}
+  },
+
+  hasSavedSession() {
+    try {
+      var raw = localStorage.getItem('tt_session');
+      if (!raw) return false;
+      var s = JSON.parse(raw);
+      if (s._savedAt && Date.now() - s._savedAt > 2 * 60 * 60 * 1000) return false;
+      return s.sessionId && s.mode;
+    } catch(e) { return false; }
+  },
+
+  _compressHistory() {
+    if (this.conversationHistory.length <= 20) return;
+    var recent = this.conversationHistory.slice(-10);
+    var older = this.conversationHistory.slice(0, -10);
+    var summary = older.map(function(m) {
+      var role = m.role === 'user' ? '用户' : '教练';
+      var content = (m.content || '').substring(0, 80);
+      if ((m.content || '').length > 80) content += '...';
+      return '[' + role + '] ' + content;
+    }).join('\n');
+    this.conversationHistory = [
+      { role: 'system', content: '[之前的对话摘要]\n' + summary },
+      recent[0] || { role: 'user', content: '' }
+    ].concat(recent.slice(1));
+    console.log('[AgentState] 上下文压缩：' + (older.length + 10) + ' 条 → ' + this.conversationHistory.length + ' 条');
   }
 };
 
@@ -349,6 +625,15 @@ const AgentRunner = {
    * 发送消息给 LLM，返回清洗后的回复文本
    */
   async send(message) {
+    // 熔断检查
+    if (HarnessGuard.isCircuitOpen()) {
+      return {
+        text: 'AI 教练暂时不可用，请稍等一分钟后重试。',
+        stateUpdate: null,
+        error: 'SERVICE_UNAVAILABLE'
+      };
+    }
+
     // 1. 构建消息列表
     const systemPrompt = PromptBuilder.build();
     const messages = [
@@ -356,22 +641,43 @@ const AgentRunner = {
       ...AgentState.conversationHistory.slice(-20),
       { role: 'user', content: message }
     ];
-    
-    // 2. 调用 API
-    const rawResponse = await this._callAPI(messages);
-    
-    // 3. 解析状态标记
-    const { cleanText, stateUpdate } = this._parseResponse(rawResponse);
-    
+
+    // 2. 调用 API（带重试 + 超时）
+    let rawResponse;
+    try {
+      rawResponse = await HarnessGuard.callWithRetry(() => this._callAPI(messages));
+    } catch (e) {
+      AgentState.addMessage('user', message);
+      var errMsg = e.message;
+      if (errMsg === 'SERVICE_UNAVAILABLE') {
+        return { text: 'AI 教练暂时不可用，服务正在恢复中，请稍等一分钟再试。', stateUpdate: null, error: errMsg };
+      } else if (errMsg === 'REQUEST_TIMEOUT') {
+        return { text: '请求超时了，请检查网络后重试。', stateUpdate: null, error: errMsg };
+      } else if (errMsg === 'CORS_ERROR') {
+        return { text: '网络限制，请在 iOS App 中打开或通过部署链接访问。', stateUpdate: null, error: errMsg };
+      }
+      return { text: '出错了：' + errMsg, stateUpdate: null, error: errMsg };
+    }
+
+    // 3. 解析状态标记（带 fallback 推断）
+    const context = {
+      mode: AgentState.mode,
+      nowPhase: AgentState.nowPhase,
+      stepNumber: AgentState.stepNumber,
+      currentStep: AgentState.currentStep,
+      currentLevel: AgentState.currentLevel
+    };
+    const { cleanText, stateUpdate } = OutputValidator.parse(rawResponse, context);
+
     // 4. 更新状态
     if (stateUpdate) {
       this._applyState(stateUpdate);
     }
-    
-    // 5. 存入历史
+
+    // 5. 存入历史 + 持久化
     AgentState.addMessage('user', message);
     AgentState.addMessage('assistant', cleanText);
-    
+
     return {
       text: cleanText,
       stateUpdate: stateUpdate
@@ -385,24 +691,24 @@ const AgentRunner = {
     if (!settings.apiKey) {
       return '⚠️ 请先在「设置」中配置 API Key，然后重试。';
     }
-    
+
     const baseUrl = settings.baseUrl || 'https://api.deepseek.com';
     const url = `${baseUrl.replace(/\/$/, '')}/v1/chat/completions`;
-    
+
     try {
       // 通过 WKWebView bridge 调用（绕过 CORS）
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.apiProxy) {
         return await this._callViaBridge(url, messages);
       }
-      
+
       // 直接调用（如果 CORS 允许）
       // 使用 Worker 代理时不需要传 Authorization（Key 在 Worker 端）
       const headers = { 'Content-Type': 'application/json' };
       if (!baseUrl.includes('workers.dev')) {
         headers['Authorization'] = `Bearer ${settings.apiKey}`;
       }
-      
-      const resp = await fetch(url, {
+
+      const resp = await HarnessGuard.fetchWithTimeout(url, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -412,18 +718,17 @@ const AgentRunner = {
           max_tokens: 800
         })
       });
-      
+
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({}));
         throw new Error(errData.error?.message || `API 错误 ${resp.status}`);
       }
-      
+
       const data = await resp.json();
       return data.choices[0].message.content;
-      
+
     } catch (e) {
-      // CORS 错误 → 提示用户用本地代理或设置
-      if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('Load failed')) {
         throw new Error('CORS_ERROR');
       }
       throw e;
@@ -461,33 +766,16 @@ const AgentRunner = {
   },
   
   /**
-   * 解析 LLM 回复，提取 STATE 标记
+   * 解析 LLM 回复，提取 STATE 标记（已委托给 OutputValidator）
    */
   _parseResponse(raw) {
-    const stateRegex = /<!--STATE:(.*?)-->/;
-    const match = raw.match(stateRegex);
-    
-    let stateUpdate = null;
-    if (match) {
-      const parts = match[1].split('|');
-      stateUpdate = {
-        mode: parts[0],
-        phase: parts[1],
-        detail: parts[2] || null,
-        extra: parts[3] || null
-      };
-      
-      // 解析所有键值对（method:XXX, reaction_mode:XXX 等）
-      const fullTag = match[1];
-      const methodMatch = fullTag.match(/method:([^|]+)/);
-      if (methodMatch) stateUpdate.method = methodMatch[1];
-      const rmMatch = fullTag.match(/reaction_mode:([^|]+)/);
-      if (rmMatch) stateUpdate.reactionMode = rmMatch[1];
-    }
-    
-    const cleanText = raw.replace(/<!--STATE:.*?-->/g, '').trim();
-    
-    return { cleanText, stateUpdate };
+    return OutputValidator.parse(raw, {
+      mode: AgentState.mode,
+      nowPhase: AgentState.nowPhase,
+      stepNumber: AgentState.stepNumber,
+      currentStep: AgentState.currentStep,
+      currentLevel: AgentState.currentLevel
+    });
   },
   
   /**
@@ -586,13 +874,14 @@ ${chatSummary}
     ];
     
     try {
-      const rawResponse = await this._callAPI(messages);
+      const rawResponse = await HarnessGuard.callWithRetry(() => this._callAPI(messages));
       const jsonStart = rawResponse.indexOf('{');
       const jsonEnd = rawResponse.lastIndexOf('}') + 1;
       const jsonStr = rawResponse.slice(jsonStart, jsonEnd);
       return JSON.parse(jsonStr);
     } catch (e) {
-      return null; // API error — caller should show appropriate message
+      console.warn('[callReview] 复盘失败:', e.message);
+      return null;
     }
   }
 };

@@ -706,6 +706,14 @@ async function handleAgentMessage(text){
 
     var result = await AgentRunner.send(text);
 
+    // Handle error responses from HarnessGuard
+    if(result.error){
+      removeTyping();
+      addAgentMsg(result.text);
+      document.getElementById('btnSend').disabled = false;
+      return;
+    }
+
     // Sync Agent state back to local state
     var prevLevel = AgentState.currentLevel;
     syncFromAgentState(result.stateUpdate);
@@ -1317,6 +1325,36 @@ function escHtml(str) {
 // ========== INIT ==========
 loadSettings();
 console.log('TakeTwo: Agent 模式就绪，模型='+settings.model);
+
+// 会话恢复：检查是否有未完成的训练
+if(AgentState.hasSavedSession && AgentState.hasSavedSession()){
+  setTimeout(function(){
+    if(confirm('检测到上次未完成的训练，是否继续？')){
+      if(AgentState.restore()){
+        // 恢复 UI 状态
+        if(AgentState.mode === 'now'){
+          startNowMode();
+        } else if(AgentState.mode === 'training'){
+          startSandbox();
+        }
+        // 恢复对话历史到 UI
+        if(AgentState.conversationHistory && AgentState.conversationHistory.length > 0){
+          AgentState.conversationHistory.forEach(function(msg){
+            if(msg.role === 'user') addUserMsg(msg.content);
+            else if(msg.role === 'assistant' && msg.content) addAgentMsg(msg.content);
+          });
+        }
+        // 恢复进度条等状态
+        if(AgentState.isComplete){
+          state.chatComplete = true;
+        }
+        showToast('已恢复上次的训练进度');
+      }
+    } else {
+      AgentState.clearSaved();
+    }
+  }, 500);
+}
 </script>
 </body>
 </html>
