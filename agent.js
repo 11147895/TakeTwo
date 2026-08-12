@@ -396,12 +396,15 @@ const AgentRunner = {
       }
       
       // 直接调用（如果 CORS 允许）
+      // 使用 Worker 代理时不需要传 Authorization（Key 在 Worker 端）
+      const headers = { 'Content-Type': 'application/json' };
+      if (!baseUrl.includes('workers.dev')) {
+        headers['Authorization'] = `Bearer ${settings.apiKey}`;
+      }
+      
       const resp = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${settings.apiKey}`
-        },
+        headers,
         body: JSON.stringify({
           model: settings.model || 'deepseek-v4-flash',
           messages,
