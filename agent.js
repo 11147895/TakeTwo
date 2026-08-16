@@ -690,7 +690,8 @@ const AgentRunner = {
    */
   async _callAPI(messages) {
     const baseUrl = settings.baseUrl || 'https://api.deepseek.com';
-    const isProxy = baseUrl.includes('workers.dev');
+    // 代理识别：Cloudflare Worker 或本地调试代理（localhost/127.0.0.1）都由服务端持有 Key，前端无需填写
+    const isProxy = /workers\.dev|localhost|127\.0\.0\.1/.test(baseUrl);
     // 只有直连 DeepSeek 时才需要前端持有 Key；Worker 代理在服务端用环境变量里的 Key
     if (!isProxy && !settings.apiKey) {
       return '⚠️ 请先在「设置」中配置 API Key，然后重试。';

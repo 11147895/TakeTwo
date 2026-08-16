@@ -360,28 +360,33 @@ const state={
 };
 // Settings — Web 端强制走 Cloudflare Worker 代理，API Key 绝不暴露在前端代码中
 const IS_IOS_NATIVE=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.apiProxy);
+const IS_LOCAL_DEV=typeof location!=='undefined'&&(location.hostname==='localhost'||location.hostname==='127.0.0.1');
 const PROXY_URL='https://taketwo-proxy.taketwo.workers.dev';
 let settings={
-  baseUrl: IS_IOS_NATIVE ? 'https://api.deepseek.com' : PROXY_URL,
-  apiKey: '',           // 不再硬编码；iOS 原生壳请在设置页输入，Web 端由 Worker 代理
+  // 本地开发（localhost:3000）自动走本地代理（server.js 服务端持有 Key）；线上 Web 走 Worker；iOS 直连
+  baseUrl: IS_LOCAL_DEV ? 'http://localhost:3000' : (IS_IOS_NATIVE ? 'https://api.deepseek.com' : PROXY_URL),
+  apiKey: '',           // 不再硬编码；iOS 原生壳请在设置页输入，Web 端由 Worker/本地代理承载
   model:'deepseek-v4-flash'
 };
 function loadSettings(){
-  // 仅允许 iOS 原生壳从 localStorage 读取用户自填的 Key
-  if(!IS_IOS_NATIVE) return;
+  // baseUrl / model 全平台可读（本地开发可指向 localhost 代理）；API Key 仅 iOS 原生壳读取
   try{
     var saved=localStorage.getItem('taketwo_settings');
     if(saved){
       var parsed=JSON.parse(saved);
-      if(parsed.apiKey) settings.apiKey=parsed.apiKey;
+      if(parsed.apiKey && IS_IOS_NATIVE) settings.apiKey=parsed.apiKey;
       if(parsed.baseUrl) settings.baseUrl=parsed.baseUrl;
       if(parsed.model) settings.model=parsed.model;
     }
   }catch(e){}
 }
 function saveSettingsToStorage(){
-  if(!IS_IOS_NATIVE) return;
-  try{localStorage.setItem('taketwo_settings',JSON.stringify(settings));}catch(e){}
+  // 只持久化 baseUrl/model；API Key 仅在 iOS 原生壳落盘，Web 端 Key 绝不写入 localStorage
+  try{
+    var toSave={baseUrl:settings.baseUrl,model:settings.model};
+    if(IS_IOS_NATIVE) toSave.apiKey=settings.apiKey;
+    localStorage.setItem('taketwo_settings',JSON.stringify(toSave));
+  }catch(e){}
 }
 // Error trap
 window.onerror=function(msg,url,line,col,err){
@@ -1165,7 +1170,15 @@ function showToast(msg){var t=document.createElement('div');t.className='toast';
 // ========== SETTINGS ==========
 function showSettings(e){if(e){e.stopPropagation();e.preventDefault()}loadSettings();document.getElementById('settingsBaseUrl').value=settings.baseUrl;document.getElementById('settingsModel').value=settings.model;var keyInput=document.getElementById('settingsApiKey');var keyHint=document.getElementById('settingsApiKeyHint');if(IS_IOS_NATIVE){keyInput.value=settings.apiKey;keyInput.readOnly=false;keyHint.textContent='iOS 直连模式：请输入你的 DeepSeek API Key'}else{keyInput.value='(由 Cloudflare Worker 代理，无需填写)';keyInput.readOnly=true;keyHint.textContent='Web 端通过 Worker 代理调用，Key 不会暴露在前端'}document.getElementById('settingsModal').style.display='flex'}
 function hideSettings(){document.getElementById('settingsModal').style.display='none'}
-function saveSettings(){if(IS_IOS_NATIVE){settings.apiKey=document.getElementById('settingsApiKey').value.trim();saveSettingsToStorage()}hideSettings();showToast('✅ 设置已保存')}
+function saveSettings(){
+  var b=document.getElementById('settingsBaseUrl').value.trim();
+  var m=document.getElementById('settingsModel').value.trim();
+  if(b) settings.baseUrl=b;
+  if(m) settings.model=m;
+  if(IS_IOS_NATIVE){settings.apiKey=document.getElementById('settingsApiKey').value.trim()}
+  saveSettingsToStorage();
+  hideSettings();showToast('✅ 设置已保存')
+}
 function clearHistory(){if(confirm('确定清除所有练习记录？')){localStorage.removeItem('tt_records');hideSettings();loadRecentRecords()}}
 // Auto-resize textarea
 document.getElementById('chatInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
