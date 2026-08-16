@@ -478,6 +478,7 @@ const PromptBuilder = {
       lib += `${i + 1}. **${sk.name}** | ${sk.coreLogic}
    简介：${sk.description}
    适配场景：${sk.sceneMatches.join('、')}
+${(sk.notFor && sk.notFor.length) ? '   不适用：' + sk.notFor.join('、') + '\n' : ''}
 
 `;
     });
