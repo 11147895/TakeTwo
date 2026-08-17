@@ -181,8 +181,8 @@
   <div class="tagline">基于心理学的 AI 沟通训练平台</div>
   <div class="meta">
     <span>情商 × 沟通 × AI</span>
-    <span>产品说明 v1.0</span>
-    <span>2026-06-24</span>
+    <span>产品说明 v1.1</span>
+    <span>2026-08-17</span>
   </div>
 </div>
 
@@ -420,7 +420,7 @@
     </div>
   </div>
 
-  <p style="font-size:13px; color:var(--text-hint); margin-top:16px;">以上 25 种方法全部在 skills.js 中完成定义。当前 6 种已配置本地训练：非暴力沟通、课题分离、果断表达法、降维回应法、接受力训练、萨提亚沟通姿态。其余方法走 AI Agent 引导。</p>
+  <p style="font-size:13px; color:var(--text-hint); margin-top:16px;">以上 25 种方法全部按「每方法一文件」拆分在 <strong>skills/ 目录</strong>中定义（含 version、notFor 负例、触发描述）。当前 6 种已配置本地训练：非暴力沟通、课题分离、果断表达法、降维回应法、接受力训练、事实锚定法。其余方法走 AI Agent 引导。</p>
 </section>
 
 <!-- ====== 四、使用流程 ====== -->
@@ -489,7 +489,7 @@
     </tr>
     <tr>
       <td><strong>可分享部署</strong></td>
-      <td>产品是纯静态 HTML 页面，可部署到 CloudStudio 生成可分享链接。用户自己配 API Key 即可使用</td>
+      <td>Web 版部署在 GitHub Pages（静态前端），AI 调用走 Cloudflare Worker 代理（API Key 存在服务端环境变量，前端不暴露）；iOS 版走 WKWebView 原生壳直连。用户无需配置 Key 即可使用</td>
     </tr>
   </table>
 </section>
@@ -601,21 +601,22 @@
       <h4 style="text-align:center;">📦 本地离线模式</h4>
       <p class="desc">6 种核心方法（非暴力沟通等）在本地完成完整训练判定，不需要联网和 API Key。</p>
       <div class="flow" style="margin-top:12px;">
-        <strong>工作方式：</strong>基于 skills.js 中预设的步骤定义、评判规则和纠偏话术，纯前端完成全流程
+        <strong>工作方式：</strong>基于 skills/ 目录中预设的步骤定义、评判规则和纠偏话术，纯前端完成全流程
       </div>
     </div>
   </div>
 
   <h3>技能体系</h3>
-  <p>每种心理学方法定义在 <strong>skills.js</strong> 中，是一个完整的知识结构对象，包含：</p>
+  <p>每种心理学方法定义在 <strong>skills/ 目录</strong>中（每方法一个文件），由 <code>manifest.json</code> 做路由、<code>assembler.js</code> 组装成方法库。每个方法是一个完整的知识结构对象，包含：</p>
   <ul style="margin:8px 0 16px 20px; color:var(--text-muted); font-size:14px;">
     <li><strong>步骤定义</strong>——每一步叫什么、目标是什么、正例反例</li>
     <li><strong>评判标准</strong>——每步常见的错误类型和匹配的正则纠偏规则</li>
     <li><strong>纠偏话术</strong>——每种错误对应什么样的引导提示</li>
     <li><strong>场景匹配</strong>——哪些场景类型适合用这个方法来练</li>
+    <li><strong>元数据</strong>——version（版本）、notFor（负例：何时不该用本方法）、触发导向 description</li>
   </ul>
 
-  <p style="font-size:13px; color:var(--text-hint);">部署方式：纯静态 HTML 可部署到任何静态文件服务器（如 CloudStudio、GitHub Pages），用户配置自己的 API Key 即可使用。</p>
+  <p style="font-size:13px; color:var(--text-hint);">部署方式：Web 版为纯静态前端部署在 GitHub Pages，AI 调用经 Cloudflare Worker 代理（Key 在服务端）；iOS 版走原生壳直连（Key 用户自填）。模型：deepseek-v4-flash。</p>
 </section>
 
 <!-- ====== 九、当前状态 ====== -->
@@ -632,7 +633,7 @@
     <tr>
       <td><strong>25 种方法库</strong></td>
       <td><span class="tag tag-teal">✅ 完成</span></td>
-      <td>全部 25 种方法在 skills.js 中完整定义，含步骤、评判、纠偏规则</td>
+      <td>全部 25 种方法按「每方法一文件」拆分在 skills/ 目录，含步骤、评判、纠偏规则、version、notFor 负例</td>
     </tr>
     <tr>
       <td><strong>AI Agent 引导</strong></td>
@@ -642,17 +643,17 @@
     <tr>
       <td><strong>本地离线训练</strong></td>
       <td><span class="tag tag-teal">✅ 完成</span></td>
-      <td>6 种方法（NVC/课题分离/果断表达/降维回应/接受力/萨提亚）支持本地模式</td>
+      <td>6 种方法（NVC/课题分离/果断表达/降维回应/接受力/事实锚定）支持本地模式</td>
     </tr>
     <tr>
       <td><strong>会话记录与复盘</strong></td>
       <td><span class="tag tag-teal">✅ 完成</span></td>
-      <td>训练过程自动保存 localforage，支持查看历史记录和复盘报告</td>
+      <td>训练过程自动保存 localStorage，支持查看历史记录和复盘报告</td>
     </tr>
     <tr>
-      <td><strong>CloudStudio 部署</strong></td>
+      <td><strong>GitHub Pages 部署</strong></td>
       <td><span class="tag tag-teal">✅ 完成</span></td>
-      <td>支持分享链接使用，用户自配 API Key</td>
+      <td>Web 版部署在 GitHub Pages；AI 调用走 Cloudflare Worker 代理（Key 存服务端，前端不暴露）</td>
     </tr>
     <tr>
       <td><strong>动态沙盘步骤</strong></td>
@@ -665,16 +666,16 @@
       <td>多设备同步、个人成长曲线、社区分享</td>
     </tr>
     <tr>
-      <td><strong>iOS App</strong></td>
-      <td><span class="tag tag-coral">第二期</span></td>
-      <td>原生 App 版本</td>
+      <td><strong>iOS 壳</strong></td>
+      <td><span class="tag tag-teal">✅ 完成</span></td>
+      <td>WKWebView 原生壳，JS Bridge 直连 DeepSeek，Key 由用户在设置页自填</td>
     </tr>
   </table>
 </section>
 
 <!-- ====== 版权 ====== -->
 <section style="text-align:center; padding:32px;">
-  <p style="color:var(--text-hint); font-size:13px; margin:0;">TakeTwo 产品说明 v1.0 · 2026-06-24 · 内部文档</p>
+  <p style="color:var(--text-hint); font-size:13px; margin:0;">TakeTwo 产品说明 v1.1 · 2026-08-17 · 内部文档</p>
 </section>
 
 </div>
