@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TakeTwo 产品需求文档 — Agent + Skill 混合架构</title>
+<style>
+  :root {
+    --bg: #fafaf8;
+    --card: #ffffff;
+    --text: #2c2c2a;
+    --text-muted: #5f5e5a;
+    --text-hint: #888780;
+    --border: #d3d1c7;
+    --border-light: #e8e6de;
+    --purple: #534ab7;
+    --purple-light: #eeedfe;
+    --purple-bg: #f7f6fd;
+    --teal: #1d9e75;
+    --teal-light: #e1f5ee;
+    --coral: #d85a30;
+    --coral-light: #faece7;
+    --blue: #378add;
+    --blue-light: #e6f1fb;
+    --amber: #ba7517;
+    --amber-light: #faeeda;
+    --red: #e24b4a;
+    --red-light: #fcebeb;
+    --green: #3b6d11;
+    --green-light: #eaf3de;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 60px 40px; }
+
+  /* Cover */
+  .cover {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 80px 60px;
+    text-align: center;
+    border: 1px solid var(--border-light);
+    margin-bottom: 48px;
+  }
+  .cover .logo {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--purple);
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .cover .subtitle {
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+  }
+  .cover .meta {
+    font-size: 13px;
+    color: var(--text-hint);
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  /* Sections */
+  section {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 48px;
+    margin-bottom: 32px;
+    border: 1px solid var(--border-light);
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-light);
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 32px 0 12px;
+  }
+  h3:first-of-type { margin-top: 0; }
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; color: var(--text-muted); }
+  p strong { color: var(--text); }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+  .tag-purple { background: var(--purple-light); color: var(--purple); }
+  .tag-teal { background: var(--teal-light); color: var(--teal); }
+  .tag-coral { background: var(--coral-light); color: var(--coral); }
+  .tag-blue { background: var(--blue-light); color: var(--blue); }
+  .tag-amber { background: var(--amber-light); color: var(--amber); }
+  .tag-red { background: var(--red-light); color: var(--red); }
+
+  /* Highlight box */
+  .hl-box {
+    background: var(--purple-light);
+    border-left: 3px solid var(--purple);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  .hl-box p { margin-bottom: 6px; }
+  .hl-box p:last-child { margin-bottom: 0; }
+  .hl-teal { background: var(--teal-light); border-left-color: var(--teal); }
+  .hl-coral { background: var(--coral-light); border-left-color: var(--coral); }
+  .hl-amber { background: var(--amber-light); border-left-color: var(--amber); }
+  .hl-red { background: var(--red-light); border-left-color: var(--red); }
+  .hl-green { background: var(--green-light); border-left-color: var(--green); }
+  .hl-blue { background: var(--blue-light); border-left-color: var(--blue); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--bg);
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    font-size: 13px;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  td:first-child, th:first-child { white-space: nowrap; }
+
+  /* User persona cards */
+  .persona-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  @media (max-width: 700px) { .persona-grid { grid-template-columns: 1fr; } }
+  .persona-card {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--border-light);
+  }
+  .persona-card h4 { margin: 0 0 8px; font-size: 15px; }
+  .persona-card .meta { font-size: 12px; color: var(--text-hint); margin-bottom: 10px; }
+
+  /* Method card */
+  .method-card {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 8px 0;
+    border: 1px solid var(--border-light);
+  }
+  .method-card h4 { margin: 0 0 6px; font-size: 14px; }
+  .method-card .source { font-size: 12px; color: var(--text-hint); margin-bottom: 6px; }
+  .method-card .desc { font-size: 13px; color: var(--text-muted); }
+
+  /* Architecture diagram block */
+  .arch-block {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 16px 0;
+    border: 1px solid var(--border-light);
+    font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* Code blocks */
+  .code-block {
+    background: #f4f4f2;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    border: 1px solid var(--border-light);
+  }
+
+  /* Flow diagram inline */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+    font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+    font-size: 13px;
+  }
+  .flow-node {
+    background: var(--purple-light);
+    color: var(--purple);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .flow-node.teal { background: var(--teal-light); color: var(--teal); }
+  .flow-node.coral { background: var(--coral-light); color: var(--coral); }
+  .flow-node.blue { background: var(--blue-light); color: var(--blue); }
+  .flow-arrow { color: var(--text-hint); font-size: 14px; }
+
+  /* Comparison table */
+  .cmp-table th:first-child, .cmp-table td:first-child {
+    width: 180px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Roadmap */
+  .roadmap-phase {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+    align-items: flex-start;
+  }
+  .roadmap-badge {
+    min-width: 80px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .badge-mvp { background: var(--purple-light); color: var(--purple); }
+  .badge-v2 { background: var(--teal-light); color: var(--teal); }
+  .badge-v3 { background: var(--amber-light); color: var(--amber); }
+
+  /* TOC */
+  .toc { list-style: none; }
+  .toc li { padding: 6px 0; }
+  .toc a { color: var(--purple); text-decoration: none; font-size: 14px; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .toc-h3 { padding-left: 24px; font-size: 13px; color: var(--text-muted); }
+
+  hr { border: none; border-top: 1px solid var(--border-light); margin: 32px 0; }
+
+  .footer {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-hint);
+    font-size: 13px;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .container { max-width: 100%; padding: 20px; }
+    section { break-inside: avoid; border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ======== COVER ======== -->
+<div class="cover">
+  <div class="logo">TakeTwo</div>
+  <div class="subtitle">基于心理学体系的沟通训练 App · 产品需求文档</div>
+  <div class="meta">
+    <span>版本 v3.1</span>
+    <span>架构：Agent + Skill 混合</span>
+    <span>2026-06-24</span>
+  </div>
+</div>
+
+<!-- ======== TOC ======== -->
+<section>
+  <h2>目录</h2>
+  <ul class="toc">
+    <li><a href="#s1">1. 产品概述</a></li>
+    <li><a href="#s2">2. 目标用户</a></li>
+    <li class="toc-h3"><a href="#s2">2.1 用户 A · 职场新人</a></li>
+    <li class="toc-h3"><a href="#s2">2.2 用户 B · 职场中层</a></li>
+    <li class="toc-h3"><a href="#s2">2.3 用户 C · 社交焦虑者</a></li>
+    <li class="toc-h3"><a href="#s2">2.4 用户 D · 亲密关系困难者</a></li>
+    <li class="toc-h3"><a href="#s2">2.5 用户 E · 自我成长型</a></li>
+    <li><a href="#s3">3. 心理学方法库</a></li>
+    <li><a href="#s4">4. 功能设计</a></li>
+    <li class="toc-h3"><a href="#s4">4.1 此刻模式 · 急救</a></li>
+    <li class="toc-h3"><a href="#s4">4.2 沙盘模式 · 训练</a></li>
+    <li><a href="#s5">5. 技术架构：Agent + Skill 混合</a></li>
+    <li class="toc-h3"><a href="#s5">5.1 架构选型理由</a></li>
+    <li class="toc-h3"><a href="#s5">5.2 对话教练 Agent（唯一入口）</a></li>
+    <li class="toc-h3"><a href="#s5">5.3 Skill 层设计</a></li>
+    <li class="toc-h3"><a href="#s5">5.4 数据流</a></li>
+    <li><a href="#s6">6. 实施路径</a></li>
+    <li><a href="#s7">7. 附录</a></li>
+  </ul>
+</section>
+
+<!-- ======== 1. 产品概述 ======== -->
+<section id="s1">
+  <h2>1. 产品概述</h2>
+
+  <div class="hl-box">
+    <p><strong>产品名称：</strong>TakeTwo</p>
+    <p><strong>命名来源：</strong>电影拍摄中导演喊 "Take Two"——重来一次，这次更好。也谐音"接招"（take two = 接住对方的话）。</p>
+  </div>
+
+  <h3>一句话定位</h3>
+  <p>基于心理学体系的<strong>沟通训练</strong> App——不教话术，用心理学方法论练沟通能力。</p>
+
+  <h3>灵感来源</h3>
+  <p>沟通能力弱的人，能不能被称为弱势群体？生活中具象事件的折射、小红书"领导说XXX怎么回"类内容的系统化升级、以及对心理学的研究——市面上缺少将心理学理论转化为可刻意训练的能力工具。</p>
+
+  <h3>核心差异</h3>
+  <table>
+    <tr><th style="width:140px">维度</th><th>传统方案</th><th>TakeTwo</th></tr>
+    <tr><td>交付物</td><td>话术模板</td><td>能力训练</td></tr>
+    <tr><td>方法来源</td><td>经验总结/碎片帖</td><td>25 种经典心理学方法（有理论背书）</td></tr>
+    <tr><td>使用方式</td><td>搜索 → 背诵 → 套用</td><td>输入场景 → AI 一步步引导练习 → 形成肌肉记忆</td></tr>
+    <tr><td>反馈</td><td>无 / 社区点赞</td><td>实时评判纠偏 + 反应模式识别 + 弱点分析</td></tr>
+    <tr><td>知识转化</td><td>"知道做不到"</td><td>低风险练习场 → 稳定迁移到真实生活</td></tr>
+  </table>
+
+  <h3>产品形态</h3>
+  <p>AI 原生应用，用户与对话教练 Agent 通过聊天交互完成训练。不是一个"AI 版课程"，而是一个<strong>教练式练习工具</strong>。</p>
+</section>
+
+<!-- ======== 2. 目标用户 ======== -->
+<section id="s2">
+  <h2>2. 目标用户</h2>
+
+  <div class="persona-grid">
+
+    <!-- A -->
+    <div class="persona-card">
+      <h4><span class="tag tag-purple">用户 A</span> 职场新人（0-3 年经验）</h4>
+      <div class="meta">典型画像：23-26 岁，学生思维未切换</div>
+      <table style="font-size:12px; margin-top:8px;">
+        <tr><th style="width:72px">遇到的话</th><th style="width:72px">内心</th><th>典型错误回应</th></tr>
+        <tr><td>"这方案你自己看过吗？"</td><td>慌了，觉得要被开</td><td>沉默 / 过度道歉 / 委屈辩解</td></tr>
+        <tr><td>"你看着办吧"</td><td>不知道边界在哪</td><td>反复请示 / 自己瞎做 / 拖着不动</td></tr>
+        <tr><td>"这个不是你负责的吗？"</td><td>不敢反驳</td><td>默认背锅 / 当场翻脸 / 背后抱怨</td></tr>
+        <tr><td>"你这周就干了这些？"</td><td>觉得自己不被看见</td><td>列流水账 / 过度解释</td></tr>
+      </table>
+      <p style="margin-top:10px"><strong>核心问题：</strong>不会在权力不对等的对话中既保护自己又维护关系。</p>
+    </div>
+
+    <!-- B -->
+    <div class="persona-card">
+      <h4><span class="tag tag-teal">用户 B</span> 职场中层（3-8 年经验）</h4>
+      <div class="meta">典型画像：28-35 岁，上有领导下有团队，两头受气</div>
+      <table style="font-size:12px; margin-top:8px;">
+        <tr><th style="width:72px">遇到的话</th><th style="width:72px">内心</th><th>典型错误回应</th></tr>
+        <tr><td>"工资太低了，外面给得多"</td><td>没权加薪，不能没人</td><td>情感绑架 / 画饼 / 冷处理</td></tr>
+        <tr><td>"预算就这么多了"</td><td>团队活干不完</td><td>默默接受 / 跟团队抱怨领导</td></tr>
+        <tr><td>"这不是我们的事"</td><td>项目推不动</td><td>替对方干活 / 抄送大领导施压</td></tr>
+        <tr><td>"我直接跟小王说了"</td><td>权威被架空</td><td>跟下属发火 / 跟领导硬刚</td></tr>
+      </table>
+      <p style="margin-top:10px"><strong>核心问题：</strong>三线同时崩——维护权威 + 向上管理 + 处理人际。</p>
+    </div>
+
+    <!-- C -->
+    <div class="persona-card">
+      <h4><span class="tag tag-coral">用户 C</span> 社交焦虑者</h4>
+      <div class="meta">典型画像：任何年龄段，害怕社交场合，事后反复复盘</div>
+      <table style="font-size:12px; margin-top:8px;">
+        <tr><th style="width:72px">遇到的话</th><th style="width:72px">内心</th><th>典型错误回应</th></tr>
+        <tr><td>"你觉得呢？"</td><td>大脑空白</td><td>"嗯…我也没什么想法"</td></tr>
+        <tr><td>"你怎么还不找对象？"</td><td>又来了，好烦</td><td>尴尬笑 / 沉默 / 甩脸色</td></tr>
+        <tr><td>"最近手头紧，能不能…"</td><td>不想借但不会拒绝</td><td>借了后悔 / 拒绝后愧疚</td></tr>
+        <tr><td>"周末一起吃饭啊"</td><td>不想去但怕伤感情</td><td>答应后痛苦 / 临到取消</td></tr>
+      </table>
+      <p style="margin-top:10px"><strong>核心问题：</strong>把拒绝当攻击，把沉默当灾难，缺少安全感。</p>
+    </div>
+
+    <!-- D -->
+    <div class="persona-card">
+      <h4><span class="tag tag-red">用户 D</span> 亲密关系困难者</h4>
+      <div class="meta">典型画像：在恋爱/婚姻中反复陷入同一类争吵</div>
+      <table style="font-size:12px; margin-top:8px;">
+        <tr><th style="width:72px">遇到的话</th><th style="width:72px">内心</th><th>典型错误回应</th></tr>
+        <tr><td>"你上次也是这样"</td><td>又来了，永远翻不完</td><td>"你能不能别翻旧账" / 也翻对方的</td></tr>
+        <tr><td>（不说话）</td><td>不知道哪里又错了</td><td>疯狂追问 / 也冷战 / 低姿态求和</td></tr>
+        <tr><td>"随便，你决定"</td><td>怎么选都是错的</td><td>真的随便选 / 追问到底 / 发火</td></tr>
+        <tr><td>"你根本不在乎我"</td><td>我做了那么多你看不见</td><td>列举做过的事 / 反击"你呢？"</td></tr>
+      </table>
+      <p style="margin-top:10px"><strong>核心问题：</strong>把情绪表达当攻击，缺少"翻译"对方情绪信号的能力。</p>
+    </div>
+
+    <!-- E -->
+    <div class="persona-card" style="grid-column: 1 / -1;">
+      <h4><span class="tag tag-blue">用户 E</span> 自我成长型</h4>
+      <div class="meta">典型画像：主动学习者——读书、播客、课程消费者，但"知道做不到"</div>
+      <table style="font-size:12px; margin-top:8px;">
+        <tr><th>触发场景</th><th>他们的状态</th><th>核心痛点</th></tr>
+        <tr><td>读完了《非暴力沟通》</td><td>知道四步法，开口还是老样子</td><td>知识没变成肌肉记忆</td></tr>
+        <tr><td>上了沟通课</td><td>课堂上练得很好，回到现实打回原形</td><td>缺少持续练习的反馈环境</td></tr>
+        <tr><td>刷到小红书话术帖</td><td>收藏了 100 条，真遇到还是懵</td><td>碎片化知识无法迁移</td></tr>
+        <tr><td>做了 MBTI / 九型人格</td><td>知道自己类型，不知道怎么改</td><td>诊断有余，训练不足</td></tr>
+      </table>
+      <p style="margin-top:10px"><strong>核心问题：</strong>缺的不是"知道"，而是"练"——一个低风险的、有反馈的练习场。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======== 3. 心理学方法库 ======== -->
+<section id="s3">
+  <h2>3. 心理学方法库</h2>
+  <p>25 种方法分为 7 大类，每种方法有明确的来源、核心逻辑和适用场景。<strong>在 Agent + Skill 架构中，每种方法对应一个独立的 Skill 模块。</strong></p>
+
+  <h3>3.1 自我觉察类 · 先看懂自己</h3>
+  <table>
+    <tr><th style="width:100px">方法</th><th style="width:140px">来源</th><th>核心逻辑</th><th style="width:160px">适用场景</th></tr>
+    <tr>
+      <td><strong>非暴力沟通</strong><br><span class="tag tag-purple">MVP</span></td>
+      <td>马歇尔·卢森堡《非暴力沟通》</td>
+      <td>观察 → 感受 → 需要 → 请求</td>
+      <td>被激怒后不知道怎么表达；习惯性压抑或爆发</td>
+    </tr>
+    <tr>
+      <td>萨提亚沟通姿态</td>
+      <td>维吉尼亚·萨提亚</td>
+      <td>5 种压力姿态：讨好、指责、超理智、打岔、一致型</td>
+      <td>想知道"我为什么总是那样回应"</td>
+    </tr>
+    <tr>
+      <td>情绪焦点疗法 EFT</td>
+      <td>苏·约翰逊</td>
+      <td>情绪分初级/次级，次级是保护层</td>
+      <td>表面生气其实是害怕；在意却表现冷漠</td>
+    </tr>
+    <tr>
+      <td>ABC 认知模型</td>
+      <td>阿尔伯特·埃利斯</td>
+      <td>A 事件 → B 信念 → C 情绪，不是事件让你难受，是解读让你难受</td>
+      <td>"他一定是故意的"——区分事实和故事</td>
+    </tr>
+  </table>
+
+  <h3>3.2 冲突处理类 · 对方在攻击/施压</h3>
+  <table>
+    <tr><th style="width:100px">方法</th><th style="width:140px">来源</th><th>核心逻辑</th><th style="width:160px">适用场景</th></tr>
+    <tr>
+      <td><strong>关键对话</strong></td>
+      <td>科里·帕特森等《关键对话》</td>
+      <td>先建安全感，再谈内容</td>
+      <td>跟领导谈加薪、跟伴侣谈底线——一开口就崩</td>
+    </tr>
+    <tr>
+      <td>高难度对话</td>
+      <td>道格拉斯·斯通《高难度对话》</td>
+      <td>事实层、情感层、身份层——哪层被触发就在哪层崩</td>
+      <td>"这不是钱的事"——其实是身份层被触发</td>
+    </tr>
+    <tr>
+      <td>CRIB 法则</td>
+      <td>《关键对话》</td>
+      <td>Commit → Recognize → Invent → Brainstorm</td>
+      <td>双方目标完全对立时找交集</td>
+    </tr>
+    <tr>
+      <td><strong>降维回应法</strong><br><span class="tag tag-purple">MVP</span></td>
+      <td>实践总结</td>
+      <td>不解释、不自证、不反击，给软钉子</td>
+      <td>被阴阳怪气时越解释越被动</td>
+    </tr>
+    <tr>
+      <td>事实锚定法</td>
+      <td>实践总结</td>
+      <td>用客观事实回应主观攻击，不进入情绪场</td>
+      <td>职场被甩锅、被质疑时用事实说话</td>
+    </tr>
+  </table>
+
+  <h3>3.3 边界与拒绝类 · 对方在越界</h3>
+  <table>
+    <tr><th style="width:100px">方法</th><th style="width:140px">来源</th><th>核心逻辑</th><th style="width:160px">适用场景</th></tr>
+    <tr>
+      <td><strong>课题分离</strong><br><span class="tag tag-purple">MVP</span></td>
+      <td>阿德勒心理学《被讨厌的勇气》</td>
+      <td>分清"这是谁的课题"，不是你的不用接</td>
+      <td>被道德绑架、被催婚、被过度干涉</td>
+    </tr>
+    <tr>
+      <td><strong>果断表达法</strong><br><span class="tag tag-purple">MVP</span></td>
+      <td>实践总结</td>
+      <td>承认对方 → 表达立场 → 给替代方案</td>
+      <td>想拒绝但怕伤关系</td>
+    </tr>
+    <tr>
+      <td>D.E.S.C. 模型</td>
+      <td>莎伦·安东尼·鲍尔</td>
+      <td>Describe → Express → Specify → Consequence</td>
+      <td>需要明确说"不"并说明后果</td>
+    </tr>
+    <tr>
+      <td>灰岩法 Grey Rock</td>
+      <td>心理学实践</td>
+      <td>让自己变得无聊无反应，操控者失去兴趣</td>
+      <td>面对操控型/自恋型人格</td>
+    </tr>
+  </table>
+
+  <h3>3.4 亲密关系类 · 关系很重要，话不能说太绝</h3>
+  <table>
+    <tr><th style="width:100px">方法</th><th style="width:140px">来源</th><th>核心逻辑</th><th style="width:160px">适用场景</th></tr>
+    <tr>
+      <td>戈特曼情绪急救</td>
+      <td>约翰·戈特曼《幸福的婚姻》</td>
+      <td>先修复情感连接，再讲道理</td>
+      <td>伴侣吵架翻旧账、冷战</td>
+    </tr>
+    <tr>
+      <td>爱的五种语言</td>
+      <td>盖瑞·查普曼</td>
+      <td>肯定言词、服务行动、礼物、精心时刻、身体接触</td>
+      <td>"我做了那么多他怎么看不到"</td>
+    </tr>
+    <tr>
+      <td>依恋理论</td>
+      <td>约翰·鲍尔比</td>
+      <td>安全型/焦虑型/回避型/恐惧型，不同沟通需求</td>
+      <td>"他一靠近我就想逃""她一冷我就慌"</td>
+    </tr>
+    <tr>
+      <td>情感账户</td>
+      <td>斯蒂芬·柯维</td>
+      <td>存款（积极互动）vs 取款（消极互动）</td>
+      <td>"为什么一次没做好就把之前的全否了"</td>
+    </tr>
+  </table>
+
+  <h3>3.5 接受好意类 · 对方在靠近/示好</h3>
+  <table>
+    <tr><th style="width:100px">方法</th><th style="width:140px">来源</th><th>核心逻辑</th><th style="width:160px">适用场景</th></tr>
+    <tr>
+      <td><strong>接受力训练</strong><br><span class="tag tag-purple">MVP</span></td>
+      <td>心理学实践</td>
+      <td>接受赞美/好意不是炫耀，是对给予者的尊重</td>
+      <td>被夸了只会说"没有没有"</td>
+    </tr>
+    <tr>
+      <td>自我同情理论</td>
+      <td>克里斯汀·内夫</td>
+      <td>对自己善意 → 人类共有体验 → 正念觉察</td>
+      <td>"我不配""我肯定不行的"</td>
+    </tr>
+    <tr>
+      <td>冒名顶替综合征应对</td>
+      <td>心理学研究</td>
+      <td>区分"我觉得我不配"和"事实是我配"</td>
+      <td>收到机会/升职时觉得"他们会发现我不行"</td>
+    </tr>
+  </table>
+
+  <h3>3.6 影响力与说服类 · 你需要让对方同意</h3>
+  <table>
+    <tr><th style="width:100px">方法</th><th style="width:140px">来源</th><th>核心逻辑</th><th style="width:160px">适用场景</th></tr>
+    <tr>
+      <td>六大影响力原则</td>
+      <td>罗伯特·西奥迪尼《影响力》</td>
+      <td>互惠、承诺一致、社会认同、喜好、权威、稀缺</td>
+      <td>需要说服别人但不知道怎么开口</td>
+    </tr>
+    <tr>
+      <td>FBI 谈判术</td>
+      <td>克里斯·沃斯《绝不退让》</td>
+      <td>战术性共情 → 标注情绪 → 校准型问题 → 让对方觉得是自己的主意</td>
+      <td>对方很强硬，需要谈判</td>
+    </tr>
+    <tr>
+      <td>框架效应</td>
+      <td>丹尼尔·卡尼曼《思考快与慢》</td>
+      <td>同一件事换个说法，对方反应完全不同</td>
+      <td>提需求总被拒，可能是表达框架问题</td>
+    </tr>
+  </table>
+
+  <h3>3.7 自我修复类 · 自己说错了想补救</h3>
+  <table>
+    <tr><th style="width:100px">方法</th><th style="width:140px">来源</th><th>核心逻辑</th><th style="width:160px">适用场景</th></tr>
+    <tr>
+      <td>三层修复法</td>
+      <td>《高难度对话》延伸</td>
+      <td>事实层道歉 → 情感层共情 → 身份层确认价值</td>
+      <td>说了伤人的话不知道怎么挽回</td>
+    </tr>
+    <tr>
+      <td>情绪急救法</td>
+      <td>实践总结</td>
+      <td>止血（暂停）→ 清创（命名情绪）→ 缝合（决定下一步）</td>
+      <td>被批评后情绪上头、当场没忍住</td>
+    </tr>
+  </table>
+
+  <div class="hl-box hl-teal">
+    <p><strong>Skills 实现状态：</strong>全部 25 个 Method Skill 已按「每方法一文件」拆分在 <code>skills/</code> 目录（<code>manifest.json</code> 提供路由元数据，<code>assembler.js</code> 组装为 <code>METHOD_SKILLS</code>）。每个方法包含：步骤定义、评判标准（含正则匹配纠偏规则）、正反例、场景匹配，并新增 <strong>version</strong>、<strong>notFor（负例）</strong>、触发导向 description。Agent Prompt 按需注入当前方法，不塞全部上下文。</p>
+    <p style="margin-top:8px"><strong>当前可训练方法（已在 index.html METHOD_TRAINING 中配置本地步骤）：</strong>非暴力沟通、课题分离、果断表达法、降维回应法、接受力训练、事实锚定法（6 种，覆盖常见场景）。其余方法由 Agent 在 API 模式下动态加载。</p>
+  </div>
+</section>
+
+<!-- ======== 4. 功能设计 ======== -->
+<section id="s4">
+  <h2>4. 功能设计</h2>
+
+  <h3>4.1 此刻模式 · 急救</h3>
+  <div class="hl-box hl-coral">
+    <p><strong>触发：</strong>用户刚遇到（或正在遇到）一个让 TA 不舒服的沟通场景，需要即刻帮助。</p>
+  </div>
+
+  <h4>流程</h4>
+  <div class="arch-block">
+用户输入："刚刚开会，领导当着所有人说'这方案你自己看过吗？'"
+
+  ┌─────────────────────────────────────────┐
+  │ 对话教练 Agent                           │
+  │                                          │
+  │  Step 1：加载 scene-analyzer Skill       │
+  │    → 结构化场景 + 匹配方法（非暴力沟通）    │
+  │                                          │
+  │  Step 2：加载 method-nvc Skill            │
+  │    → 按 4 步引导用户（观察→感受→需要→请求） │
+  │    → 每一步评判纠偏（最多 2 次）            │
+  │                                          │
+  │  Step 3：加载 review Skill                │
+  │    → 复盘报告 + 反应模式识别 + 存档        │
+  └─────────────────────────────────────────┘</div>
+
+  <h4>交互示例</h4>
+  <div class="code-block">
+<span style="color:var(--purple)">【Agent 开场】</span>
+我理解了你的情况。领导在会上当着同事的面质疑了你的方案。
+我们用非暴力沟通的方法，一步一步来处理。核心是四步：观察→感受→需要→请求。
+
+<span style="color:var(--text-hint)">──────── 第一步：观察 ────────</span>
+📋 只说你看到、听到的事实，不加你的解读。
+   ❌ "领导当众羞辱我" ← 这是你的解读
+   ✅ "领导在会议上问我有没有看过方案" ← 这是观察
+
+现在，试试只说出事实：他说的原话是什么？
+
+<span style="color:var(--teal)">【用户】</span>
+领导在会上质疑我的方案
+
+<span style="color:var(--purple)">【Agent 纠偏】</span>
+接近了！但"质疑"还是带了一点你的判断。
+更纯粹的观察是："领导在会上问我'这方案你自己看过吗？'"
+——不评价他的动机，只复述事实。当你把"羞辱"换回"问了一句话"，情绪就已经开始降温了。
+
+<span style="color:var(--text-hint)">──────── 第二步：感受 ────────</span>
+你当时的感受是什么？注意感受是情绪词，不是想法。
+   ❌ "我觉得他不尊重我" ← 对动机的判断
+   ✅ "我感到很难堪" ← 真实的感受
+
+<span style="color:var(--teal)">【用户】</span>
+难堪，还有点生气
+
+<span style="color:var(--purple)">【Agent 纠偏】</span>
+✅ 对了。"难堪"和"生气"都是真实的感受。很多人跳过感受直接进入反击或退缩——但当你承认"我难堪、我生气"，你才开始真正处理这件事。
+
+<span style="color:var(--text-hint)">──────── 第三步：需要 ────────</span>
+你的什么需要没有被满足？感受背后都有一个需要。
+常见的：被尊重、被认可、被理解、安全感、自主权……
+
+<span style="color:var(--teal)">【用户】</span>
+我想被尊重
+
+<span style="color:var(--purple)">【Agent 纠偏】</span>
+很好——被尊重是一个核心需要。还可以更深一层：你准备了很久的方案被一句话否定了，也许还需要你的努力被看见？
+
+<span style="color:var(--text-hint)">──────── 第四步：请求 ────────</span>
+你想提出什么请求？请求要具体、可执行，不是抱怨也不是命令。
+   ❌ "希望他别这样说话" ← 模糊
+   ✅ "希望他在有意见时能单独跟我说" ← 具体可行
+
+<span style="color:var(--teal)">【用户】</span>
+希望他下次有意见私下跟我说，别当着所有人
+
+<span style="color:var(--purple)">【Agent 总结】</span>
+🎯 把你说的四步串起来，就是一段完整的回应：
+
+"领导，上午在会上您问我方案的事，我当时有点难堪。我对这个方案花了不少心思，希望能了解您具体的意见。以后如果有建议，能不能单独跟我说？我更听得进去。"
+
+这不是模板，是你自己想出来的。下次遇到类似场景，用你自己的话把这四层意思表达出来就行。</div>
+
+  <hr>
+
+  <h3>4.2 沙盘模式 · 训练</h3>
+  <div class="hl-box hl-teal">
+    <p><strong>触发：</strong>用户选择一种关系类型和卡壳场景，提前进行系统性训练。</p>
+  </div>
+
+  <h4>入口流程</h4>
+  <p>选关系（职场 / 亲密关系 / 朋友 / 家人）→ 选卡壳场景（被当众质疑 / 被甩锅 / 被催婚 …）→ 开始训练</p>
+
+  <h4>场景变体系统</h4>
+  <p>同一场景类型，通过 5 种变体从易到难递进：</p>
+  <table>
+    <tr><th style="width:80px">变体</th><th>表达方式</th><th>示例（被当众质疑）</th><th style="width:60px">难度</th></tr>
+    <tr><td>变体 1</td><td>直接质疑</td><td>"你这方案你自己看过吗？"</td><td>★★</td></tr>
+    <tr><td>变体 2</td><td>反问</td><td>"这方案你确定不用再看一遍？"</td><td>★★★</td></tr>
+    <tr><td>变体 3</td><td>讽刺</td><td>"看来你对这方案挺有信心的啊"</td><td>★★★</td></tr>
+    <tr><td>变体 4</td><td>借他人之口</td><td>"有同事反映这个方案有些问题"</td><td>★★★★</td></tr>
+    <tr><td>变体 5</td><td>质疑能力</td><td>"这个水平的方案，不像你做出来的"</td><td>★★★★★</td></tr>
+  </table>
+
+  <h4>五关训练流程（变体 1）</h4>
+  <p><strong>核心设计：</strong>沙盘统一使用 5 级关卡框架（听懂→看见自己→换方式→稳住→迁移），其中「换方式」关卡根据所选场景绑定的心理学方法，动态加载对应的训练步骤。每个方法在 <code>METHOD_TRAINING</code> 中定义了自己的子步骤（详见代码），但均映射到统一的 5 级框架中。</p>
+  <table>
+    <tr><th style="width:60px">关数</th><th style="width:100px">训练目标</th><th>引导方式</th><th>评判标准</th></tr>
+    <tr>
+      <td><strong>第 1 关<br>听懂</strong></td>
+      <td>快速判断话语的多重含义</td>
+      <td>展示原话 → 多选含义选项（包含字面、隐藏、过度解读）</td>
+      <td>选中关键含义通过；漏掉提示；选过度解读纠偏</td>
+    </tr>
+    <tr>
+      <td><strong>第 2 关<br>看见自己</strong></td>
+      <td>识别本能反应模式</td>
+      <td>"你的第一反应是什么？不用想，脱口而出那种。"</td>
+      <td><strong>判定反应模式：</strong>回避型 / 防御型 / 讨好型 / 被动攻击型 / 建设型</td>
+    </tr>
+    <tr>
+      <td><strong>第 3 关<br>换一种方式</strong></td>
+      <td>打破本能，找到建设性回应</td>
+      <td>按推荐方法步骤引导（4 步或 3 步），每步评判纠偏</td>
+      <td>做到建设型回应通过；回到旧模式纠偏</td>
+    </tr>
+    <tr>
+      <td><strong>第 4 关<br>稳住</strong></td>
+      <td>对方不退让时持续稳住</td>
+      <td>对方继续施压："{follow_up_pressure}"，你没有退，怎么回？</td>
+      <td>不崩溃也不攻击通过；退缩或反击纠偏</td>
+    </tr>
+    <tr>
+      <td><strong>第 5 关<br>迁移</strong></td>
+      <td>换场景也能用同样能力</td>
+      <td>新场景新对象："{transfer_scene.speaker}说：'{transfer_scene.original_words}'"</td>
+      <td>直接用上方法优秀；需要提示合格；回到旧模式纠偏</td>
+    </tr>
+  </table>
+
+  <div class="hl-box">
+    <p><strong>变体 2-5 精简为 3 关：</strong>第 2 关（看见自己）→ 第 3 关（换一种方式）→ 第 4 关（稳住）。跳过"听懂"和"迁移"，因为同一场景类型下用户已建立认知。</p>
+  </div>
+
+  <h4>反应模式参考</h4>
+  <table>
+    <tr><th>模式</th><th>典型表现</th><th>长期代价</th></tr>
+    <tr><td><span class="tag tag-coral">回避型</span></td><td>沉默、退缩、转移话题、快速退让</td><td>对方觉得你好拿捏</td></tr>
+    <tr><td><span class="tag tag-coral">防御型</span></td><td>解释、反击、自证、推卸责任</td><td>关系越来越僵</td></tr>
+    <tr><td><span class="tag tag-coral">讨好型</span></td><td>过度道歉、委曲求全、否定自己需要</td><td>自己越来越累，对方不会更尊重你</td></tr>
+    <tr><td><span class="tag tag-coral">被动攻击型</span></td><td>表面顺从实则不满、阴阳怪气回击</td><td>积怨爆发时伤害更大</td></tr>
+    <tr><td><span class="tag tag-teal">建设型</span></td><td>既表达自己又维护关系、有感受有需要有请求</td><td>目标状态</td></tr>
+  </table>
+</section>
+
+<!-- ======== 5. 技术架构 ======== -->
+<section id="s5">
+  <h2>5. 技术架构：Agent + Skill 混合</h2>
+
+  <h3>5.1 架构选型理由</h3>
+
+  <div class="hl-box">
+    <p><strong>核心原则：Agent 负责体验，Skill 负责内容。</strong></p>
+    <p>对话教练的"温暖感"是 Agent 的职责——管理会话状态、语调、流程节奏。心理学方法的"知识结构"是 Skill 的职责——步骤定义、评判标准、正反例、纠偏话术。</p>
+  </div>
+
+  <table class="cmp-table">
+    <tr><th>维度</th><th>纯 Agent 架构</th><th style="color:var(--teal)">Agent + Skill 混合 (推荐)</th></tr>
+    <tr>
+      <td>Prompt 规模</td>
+      <td>25 个方法全在 System Prompt → 超过上下文窗口</td>
+      <td style="color:var(--teal)">文件全量加载（script 标签，几乎免费）；上下文只注入当前 1 个方法的完整内容 → Agent prompt 保持 2000 token 以内</td>
+    </tr>
+    <tr>
+      <td>加新方法</td>
+      <td>改 Agent 核心 prompt → 回归风险高</td>
+      <td style="color:var(--teal)">加一个 Skill 文件，Agent 无需改动</td>
+    </tr>
+    <tr>
+      <td>测试</td>
+      <td>改一处影响全局</td>
+      <td style="color:var(--teal)">每个 Skill 独立测试；Agent 和 Skill 解耦回归</td>
+    </tr>
+    <tr>
+      <td>Token 成本</td>
+      <td>每次对话把所有方法塞进上下文</td>
+      <td style="color:var(--teal)">按需加载，仅当前方法相关内容进入上下文</td>
+    </tr>
+    <tr>
+      <td>内容迭代</td>
+      <td>心理学顾问和工程耦合</td>
+      <td style="color:var(--teal)">Skill 文件由领域专家独立维护</td>
+    </tr>
+    <tr>
+      <td>延迟</td>
+      <td>3 个 Agent 串行，至少 3 次 LLM 调用</td>
+      <td style="color:var(--teal)">场景分析和复盘内化为 Skill，Latency 更低</td>
+    </tr>
+  </table>
+
+  <h3>5.2 对话教练 Agent（唯一入口）</h3>
+
+  <div class="hl-box hl-purple">
+    <p><strong>角色：</strong>用户唯一直接交互的对话实体。负责会话管理、状态跟踪、语气语调、方法调度。</p>
+  </div>
+
+  <table>
+    <tr><th style="width:100px">职责</th><th>说明</th></tr>
+    <tr><td>会话状态管理</td><td>当前模式（此刻/沙盘）、场景 ID、当前步骤/关数、用户已答内容、纠偏次数</td></tr>
+    <tr><td>Skill 调度</td><td>根据场景引擎输出选择 Method Skill → 加载 → 按 Skill 步骤引导</td></tr>
+    <tr><td>评判与纠偏</td><td>用 Method Skill 提供的评判标准检查用户回答 → 生成纠偏话术</td></tr>
+    <tr><td>语气风格</td><td>口语化中文、不用"您"、纠偏不批评、肯定不夸张、每次输出 ≤150 字（引导）或 ≤200 字（纠偏）</td></tr>
+    <tr><td>模式切换</td><td>根据输入判断是"此刻"急救还是"沙盘"训练，切换对应流程</td></tr>
+    <tr><td>复盘触发</td><td>所有步骤/关卡完成后 → 调 review Skill → 将结果展示给用户</td></tr>
+  </table>
+
+  <h4>Agent System Prompt 结构（引擎端）</h4>
+  <p>Agent 的 System Prompt 由 <code>agent.js</code> 中的 <code>PromptBuilder</code> 模块在<strong>每次 LLM 调用时动态拼装</strong>，包含以下层次：</p>
+  <div class="code-block"><span style="color:var(--text-hint)">// PromptBuilder.build() 每次调用时组装</span>
+1. _buildAgentCore()      → Agent 人格骨架（始终不变，约 200 token）
+2. _buildMethodLibrary()  → 此刻模式阶段1注入全部方法摘要（供 LLM 选择）
+   或 _buildMethodInjection() → 阶段2+注入已选方法的完整 Skill 步骤
+3. _buildNowModeInstructions() 或 _buildTrainingModeInstructions() → 模式流程
+4. _buildOutputFormat()   → 强制 STATE 标记输出格式
+
+<span style="color:var(--text-hint)">// 沙盘模式 5 级框架</span>
+变体1：听懂(level1) → 看见自己(level2) → 换方式(level3) → 稳住(level4) → 迁移(level5)
+变体2-5：精简为 看见自己 → 换方式 → 稳住（3关）
+映射函数：_sandboxStepToLevel / _sandboxLevelToStep
+
+<span style="color:var(--text-hint)">// STATE 标记（Agent 输出，前端解析）</span>
+<!--STATE:now|nvc|1|观察|method:非暴力沟通-->
+<!--STATE:training|level|2|看见自己|reaction_mode:防御型--></div>
+
+  <div class="hl-box hl-green">
+    <p><strong>关键：Agent prompt 不包含任何具体方法的步骤、例子、纠偏规则。</strong>这些全部外置在 Method Skill 中，运行时按需注入。</p>
+  </div>
+
+  <h3>5.3 Skill 层设计（当前实现）</h3>
+  <p><strong>核心目录：</strong><code>skills/</code> — 按「每方法一文件」拆分，由 <code>manifest</code>（路由）+ <code>assembler.js</code>（组装）组织。Agent 通过 <code>getSkill()</code> / <code>getMethodNames()</code> 等查询函数按需读取。纯前端内存运行，无需文件系统。</p>
+  <div class="code-block"><span style="color:var(--text-hint)">// public/skills/ 目录结构（本次拆分落地）</span>
+skills/
+├── manifest.json      → 25 条路由元数据（id / file / name / category / version / description / sceneMatches / notFor）
+├── manifest.js        → 同内容，同步加载载体（必须挂 window.SKILL_MANIFEST，供 assembler 读取）
+├── nvc.js             → 每方法一文件：完整步骤 + 正反例 + 纠偏正则 + version + notFor
+├── satir.js           → …
+│   ⋮                 （共 25 个方法文件）
+├── emotionalFirstAid.js
+└── assembler.js       → 按 manifest 组装为 METHOD_SKILLS；暴露 getSkill / getSkillsForSceneType /
+                         getDefaultMethod / getMethodNames；保留 SCENE_ANALYZER / REVIEW / SCENE_GENERATOR
+                         （含历史方法名兼容别名，如 "情绪焦点疗法EFT" → "情绪焦点疗法"）</div>
+  <p style="font-size:13px;color:var(--text-hint)">对应四段式 Skill 结构：① 元数据（manifest + version/notFor/description）→ 负责「被找到」；② 知识（steps/正反例/纠偏）→ 负责「教会它」；③ 可执行 Tooling 与 ④ 测试为规划项（见 5.5）。</p>
+
+  <h4>Skill 分类</h4>
+  <table>
+    <tr><th>Skill 对象</th><th>数量</th><th>职责</th><th>调用时机</th></tr>
+    <tr>
+      <td><strong>METHOD_SKILLS</strong></td>
+      <td>25（各一文件）</td>
+      <td>每种心理学方法的完整知识：步骤定义、评判标准（含正则匹配规则）、纠偏话术、场景匹配条件、来源信息；每方法含 <code>version</code> / <code>notFor</code>（负例）/ 触发导向 description</td>
+      <td>Agent Prompt 构建时注入当前方法（含负例排除）</td>
+    </tr>
+    <tr>
+      <td><strong>SCENE_ANALYZER_SKILL</strong></td>
+      <td>1</td>
+      <td>场景类型定义、关系类型枚举、场景→方法映射表、默认推荐方法</td>
+      <td>此刻模式阶段1：LLM 从摘要中选择方法</td>
+    </tr>
+    <tr>
+      <td><strong>SCENE_GENERATOR_SKILL</strong></td>
+      <td>1</td>
+      <td>场景变体风格定义（直接/反问/讽刺/借人之口/质疑能力）</td>
+      <td>沙盘模式下需要生成场景变体时</td>
+    </tr>
+    <tr>
+      <td><strong>REVIEW_SKILL</strong></td>
+      <td>1</td>
+      <td>反应模式定义（5种）、弱项维度（4个）、复盘分析框架</td>
+      <td>所有步骤/关卡完成时，由 AgentRunner.callReview() 调用</td>
+    </tr>
+  </table>
+
+  <h4>Method Skill 标准 Schema</h4>
+  <div class="code-block">{
+  <span style="color:var(--text-hint)">// 元信息</span>
+  "skill_id": "method-nvc",
+  "method_name": "非暴力沟通",
+  "method_name_en": "Nonviolent Communication",
+  "version": "1.0.0",
+  "source": {
+    "author": "马歇尔·卢森堡",
+    "book": "《非暴力沟通》",
+    "year": 2003
+  },
+  "category": "自我觉察",
+  "core_logic": "观察 → 感受 → 需要 → 请求",
+  <span style="color:var(--text-hint)">// 触发与负例（v3.2 新增：选方法时排除法判断）</span>
+  "not_for": ["对方是阴阳怪气/操控型人格", "情绪过载需先情绪急救"],
+
+  <span style="color:var(--text-hint)">// 步骤定义</span>
+  "steps": [
+    {
+      "step_number": 1,
+      "step_name": "观察",
+      "goal": "说出你看到、听到的事实，不加评判",
+      "guidance_template": "只说你看到、听到的东西，不加你的解读。\n❌ '{wrong_example}'\n✅ '{right_example}'\n现在，试试只说出事实：他说的原话是什么？",
+      "common_errors": ["把评判当观察", "添加动机揣测", "过度概括"],
+      "correction_hints": {
+        "评判当观察": "试试只说他说的原话，不加你的理解",
+        "动机揣测": "你加了对他的动机判断。回到原话本身——他说了什么词？",
+        "过度概括": "'他总是这样'太笼统了。就说这一次，他说了什么？"
+      }
+    },
+    {
+      "step_number": 2,
+      "step_name": "感受",
+      "goal": "表达情绪感受，不是想法或判断",
+      "guidance_template": "你当时的感受是什么？感受是情绪词。\n❌ '{wrong_example}'\n✅ '{right_example}'",
+      "common_errors": ["把想法当感受", "感受词太笼统"],
+      "correction_hints": {
+        "想法当感受": "'我觉得他不尊重我'是想法，'我感到委屈'才是感受。你心里是什么感觉？",
+        "太笼统": "'不舒服'太模糊了。具体一点：沮丧？委屈？愤怒？害怕？"
+      },
+      "emotion_vocabulary": ["难堪", "委屈", "愤怒", "害怕", "紧张", "沮丧", "失望", "受伤", "焦虑", "无助"]
+    },
+    {
+      "step_number": 3,
+      "step_name": "需要",
+      "goal": "识别你的什么需要没有被满足",
+      "guidance_template": "你的什么需要没有被满足？每个感受背后都有一个需要。\n常见的需要：被尊重、被认可、被理解、安全感、自主权……",
+      "common_errors": ["把策略当需要", "需要太表面"],
+      "correction_hints": {
+        "策略当需要": "'我想辞职'是策略，'我需要被尊重'才是需要。策略有很多种，需要只有一个",
+        "太表面": "还可以更深一层。你准备了很久的方案被否定了——除了被尊重，还需要什么？"
+      },
+      "needs_vocabulary": ["被尊重", "被认可", "被理解", "安全感", "自主权", "被看见", "公平", "归属感", "价值感", "连接"]
+    },
+    {
+      "step_number": 4,
+      "step_name": "请求",
+      "goal": "提出具体、可执行的请求，不是命令",
+      "guidance_template": "你想提出什么请求？请求要具体、可执行。\n❌ '{wrong_example}'\n✅ '{right_example}'",
+      "common_errors": ["把命令当请求", "请求太模糊", "没有正向表述"],
+      "correction_hints": {
+        "命令当请求": "'你必须道歉'是命令，对方不可以拒绝。试试提一个对方可以说不的请求",
+        "太模糊": "'希望他别这样'——具体怎么做？什么时候？什么方式？",
+        "没有正向": "试试说你希望他做什么，而不是不做什么。正向的请求更容易被接受"
+      }
+    }
+  ],
+
+  <span style="color:var(--text-hint)">// 适用场景条件</span>
+  "match_conditions": {
+    "scene_types": ["被当众质疑/批评", "被安排模糊任务", "被甩锅/抢功劳"],
+    "power_dynamic": ["对方上位", "平等"],
+    "relationship_types": ["职场", "亲密关系", "家人"],
+    "emotions": ["愤怒", "委屈", "沮丧", "受伤"],
+    "is_positive": false
+  },
+
+  <span style="color:var(--text-hint)">// 完整回应串联模板</span>
+  "complete_response_template": "{observation}。{feeling}。{need}。{request}。",
+  "complete_response_example": "领导，上午在会上您问我方案的事，我当时有点难堪。我对这个方案花了不少心思，希望能了解您具体的意见。以后如果有建议，能不能单独跟我说？我更听得进去。",
+
+  <span style="color:var(--text-hint)">// 纠偏规则</span>
+  "max_retries_per_step": 2,
+  "on_max_retries": "给出示范回答，并解释为什么这样更好",
+
+  <span style="color:var(--text-hint)">// 评分标注</span>
+  "scoring_rubric": {
+    "excellent": "四步全部一次通过，区分清晰，表达自然",
+    "good": "四步通过但有小纠偏，基本能用自己的话",
+    "needs_work": "某步纠偏 2 次，区分能力弱",
+    "struggled": "多步需要示范，建议重练"
+  }
+}</div>
+
+  <h4>scene-analyzer Skill 输出 Schema</h4>
+  <div class="code-block">{
+  "scene_summary": "一句话概述场景",
+  "speaker": "说话者身份",
+  "relationship": "职场/亲密关系/朋友/家人/新认识的人",
+  "power_dynamic": "对方上位/平等/你上位",
+  "scene_type": "被当众质疑/批评",
+  "original_words": "对方说的核心原话",
+  "user_emotions": ["难堪", "生气"],
+  "difficulty": 3,
+  "is_positive": false,
+  "recommended_method": {
+    "skill_id": "method-nvc",
+    "method_name": "非暴力沟通",
+    "reason": "权力不对等 + 情绪被激发 → 需要清晰表达自己",
+    "confidence": 0.92
+  },
+  "alternative_method": {
+    "skill_id": "method-descend",
+    "method_name": "降维回应法",
+    "reason": "如果用户倾向于回避冲突，可以切换到更轻量的方式"
+  }
+}</div>
+
+  <h3>5.4 数据流</h3>
+
+  <h4>双模式运行</h4>
+  <table>
+    <tr><th style="width:120px">模式</th><th>触发条件</th><th>行为</th></tr>
+    <tr><td><strong>AI Agent 模式</strong></td><td>设置中配置了 API Key</td><td>通过 <code>AgentRunner.send()</code> 调用 LLM API，PromptBuilder 动态构建 System Prompt，STATE 标记驱动状态同步</td></tr>
+    <tr><td><strong>离线本地模式</strong></td><td>未配置 API Key</td><td>使用 <code>index.html</code> 中的预设训练逻辑（choice/reflect/practice/resist/transfer），方法步骤硬编码在 <code>METHOD_TRAINING</code> 中</td></tr>
+  </table>
+
+  <h4>此刻模式完整数据流（Agent 模式）</h4>
+  <div class="arch-block">
+用户: "刚刚开会，领导当着所有人说'这方案你自己看过吗？'"
+  │
+  ▼
+┌──────────────────────────────────────────────────────┐
+│  AgentRunner.send()                                  │
+│                                                       │
+│  ① syncToAgentState() — 同步本地状态到 AgentState      │
+│                                                       │
+│  ② PromptBuilder.build() — 拼装 System Prompt          │
+│     · _buildAgentCore() — Agent 人格                  │
+│     · _buildMethodLibrary() — 25 个方法摘要（供 LLM 选）│
+│     · _buildNowModeInstructions() — 此刻流程           │
+│                                                       │
+│  ③ _callAPI() — 调用 LLM (OpenAI 兼容 API)            │
+│                                                       │
+│  ④ _parseResponse() — 提取 STATE 标记                  │
+│     · LLM 选出 method:非暴力沟通                        │
+│                                                       │
+│  ⑤ _applyState() — 更新 AgentState.nowPhase='nvc'     │
+│                                                       │
+│  ⑥ syncFromAgentState() — 同步回本地 state             │
+│     → UI 更新进度条、步骤                                     │
+│                                                       │
+│  ⑦ 后续每轮：{方法已选定} → _buildMethodInjection()      │
+│     注入完整 Skill 步骤 → LLM 按步骤引导 + 评判纠偏       │
+│                                                       │
+│  ⑧ nowPhase='complete' → showAgentNvcSummary()        │
+│     → AgentRunner.callReview() → 展示复盘报告           │
+└──────────────────────────────────────────────────────┘</div>
+
+  <h4>沙盘模式完整数据流（本地模式）</h4>
+  <div class="arch-block">
+用户: 选「职场」→「被当众质疑」→ 开始训练
+  │
+  ▼
+┌──────────────────────────────────────────────────────┐
+│  startTraining()                                     │
+│                                                       │
+│  ① 查找场景 (findScenarioInfo) → 获取绑定方法名          │
+│     · w1「被当众质疑方案」→ method:'非暴力沟通'           │
+│                                                       │
+│  ② 构建 trainSteps（5级框架 + 第3关动态步骤）            │
+│     听懂 → 看见自己 → [观察→感受→需要→请求] → 稳住 → 迁移 │
+│     （method-specific 子步骤由 METHOD_TRAINING 提供）    │
+│                                                       │
+│  ③ renderTrainingDots() — 渲染关卡圆点进度条              │
+│                                                       │
+│  ④ runCurrentStep() 逐关执行                            │
+│     · 第1关 听懂 (choice)    → 渲染选项列表               │
+│     · 第2关 看见自己 (reflect) → 问第一反应                │
+│     · 第3关 换方式 (practice) → 按方法步骤依次引导          │
+│     · 第4关 稳住 (resist)    → 展示施压话术                │
+│     · 第5关 迁移 (transfer)  → 展示迁移场景                │
+│                                                       │
+│  ⑤ advanceStep() → 关通过 → 更新圆点 + 进度条            │
+│                                                       │
+│  ⑥ 全部完成 → saveSessionRecord() → 保存到 localStorage  │
+│     （包含完整对话 HTML + 复盘报告 HTML）                  │
+└──────────────────────────────────────────────────────┘</div>
+
+  <h4>Skill 调用统计</h4>
+  <table>
+    <tr><th>场景</th><th>方法注入</th><th>复盘调用</th><th>总 LLM 调用</th></tr>
+    <tr><td>此刻模式（Agent 模式，1 次训练）</td><td>1（选方法）+ 4（每步引导）</td><td>1（callReview）</td><td><strong>6</strong></td></tr>
+    <tr><td>沙盘变体 1（离线模式）</td><td>0（本地预设）</td><td>0（本地评判）</td><td><strong>0</strong></td></tr>
+    <tr><td>沙盘变体 1（Agent 模式）</td><td>1（选方法）+ 5关引导</td><td>1</td><td><strong>~7</strong></td></tr>
+  </table>
+
+  <h4>部署方式</h4>
+  <div class="hl-box hl-blue">
+    <p><strong>双通道部署：</strong></p>
+    <p style="margin-top:4px">① <strong>Web 版</strong>：GitHub Pages 托管静态前端（<code>public/</code>）→ <code>Cloudflare Worker</code> 代理 API 请求（<code>worker/proxy.js</code>），API Key 存在 Worker 环境变量，前端代码不暴露真实 Key。</p>
+    <p style="margin-top:4px">② <strong>iOS 版</strong>：WKWebView 原生壳 + JS Bridge（<code>apiProxy</code>）直连 DeepSeek，Key 由用户在设置页自填并保存在 localStorage。</p>
+    <p style="margin-top:4px">模型：<code>deepseek-v4-flash</code>（api.deepseek.com）。未配置 Key 时使用本地预设训练逻辑（METHOD_TRAINING）。</p>
+    <p style="margin-top:8px;font-size:12px;color:var(--text-hint)">部署文件：TakeTwo/public/（index.html + skills/ + agent.js），同步至 TakeTwo_iOS/TakeTwo/www/</p>
+  </div>
+
+  <h3>5.5 规划中的增强（Skill 四段式补齐）</h3>
+  <p>当前 Skill 已具备 ① 元数据 与 ② 知识；③ 可执行 Tooling 与 ④ 测试为规划项：</p>
+  <table>
+    <tr><th style="width:130px">项</th><th>规划内容</th><th>收益</th></tr>
+    <tr>
+      <td><strong>过关判定 passCriteria</strong></td>
+      <td>每 step 增加明确的过关标准（或正则），替代 LLM 自由裁量；纯加字段、Agent 零改动</td>
+      <td>状态机推进更稳定——避免"答得好被反复要求重答 / 明显跑偏却被放行"</td>
+    </tr>
+    <tr>
+      <td><strong>可执行校验器</strong></td>
+      <td>把 correctionRules 正则落成前端 <code>evaluateStep()</code> 函数，判定走代码、表达走 LLM</td>
+      <td>省 token、判定确定、可离线测试</td>
+    </tr>
+    <tr>
+      <td><strong>Skill 测试用例</strong></td>
+      <td>每方法补 2-3 个「用户回答 → 期望判定」用例；<code>tests/skills_smoke.js</code> 已就位（10 项回归）</td>
+      <td>改话术/加方法可回归验证，防止正则应改坏</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ======== 6. 实施路径 ======== -->
+<section id="s6">
+  <h2>6. 实施路径</h2>
+
+  <div class="roadmap-phase">
+    <div class="roadmap-badge badge-mvp">MVP 已完成<br>当前状态</div>
+    <div>
+      <h4 style="margin:0 0 8px">核心验证</h4>
+      <table style="font-size:13px">
+        <tr><th style="width:100px">模块</th><th>交付 / 状态</th></tr>
+        <tr><td><strong>Agent 引擎</strong></td><td>✅ agent.js — AgentState + PromptBuilder + AgentRunner；支持 OpenAI 兼容 API + WKWebView bridge</td></tr>
+        <tr><td><strong>Method Skills</strong></td><td>✅ skills/ 目录 — 25 个方法各一文件（含正则纠偏规则）+ manifest.json 路由 + assembler 组装；每方法含 version / notFor / 触发描述</td></tr>
+        <tr><td><strong>本地训练引擎</strong></td><td>✅ index.html — METHOD_TRAINING 涵盖 6 种方法本地步骤；5级沙盘框架；场景选择（42个预设场景）</td></tr>
+        <tr><td><strong>功能</strong></td><td>✅ 此刻模式（Agent 模式完整4步引导 + 复盘）<br>✅ 沙盘模式变体1五关（本地预设逻辑 + Agent 双路径）</td></tr>
+        <tr><td><strong>会话记录</strong></td><td>✅ localStorage 存储最近 20 条记录，支持查看对话回放和复盘报告</td></tr>
+        <tr><td><strong>部署</strong></td><td>✅ GitHub Pages（前端）+ Cloudflare Worker 代理（Key 存服务端）；iOS 壳走 WKWebView JS Bridge（Key 用户自填）</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="roadmap-phase" style="margin-top:24px">
+    <div class="roadmap-badge badge-v2">第二期<br>6-8 周</div>
+    <div>
+      <h4 style="margin:0 0 8px">全面方法论 + 沙盘完整</h4>
+      <table style="font-size:13px">
+        <tr><th style="width:100px">模块</th><th>交付</th></tr>
+        <tr><td><strong>Skills</strong></td><td>扩展到全部 25 个 method-* Skill + scene-generator Skill（完整 5 变体）</td></tr>
+        <tr><td><strong>功能</strong></td><td>沙盘完整 5 变体 × 5/3 关流程 + 场景库存档 + 重练提醒</td></tr>
+        <tr><td><strong>体验</strong></td><td>反应模式趋势追踪 + 个性化弱项推荐 + 闯关进度可视化</td></tr>
+        <tr><td><strong>用户</strong></td><td>封闭 Beta 100-500 人</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="roadmap-phase" style="margin-top:24px">
+    <div class="roadmap-badge badge-v3">第三期<br>8-12 周</div>
+    <div>
+      <h4 style="margin:0 0 8px">个性化 + 开放生态</h4>
+      <table style="font-size:13px">
+        <tr><th style="width:100px">模块</th><th>交付</th></tr>
+        <tr><td><strong>功能</strong></td><td>用户自定义场景（创建自己的卡壳场景）+ 用户自定义 Method Skill（读完一本书自建训练方法）</td></tr>
+        <tr><td><strong>Skills</strong></td><td>user-scene-manager Skill + user-method-builder Skill</td></tr>
+        <tr><td><strong>体验</strong></td><td>长期进步数据仪表盘 + 反应模式变化曲线 + 社区场景库</td></tr>
+        <tr><td><strong>用户</strong></td><td>公开发布</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="hl-box hl-amber" style="margin-top:24px">
+    <p><strong>设计原则：</strong>每一期加新方法不需要改 Agent，只需新增或更新 Method Skill 文件。Agent 的能力边界在 MVP 阶段就冻结。</p>
+  </div>
+</section>
+
+<!-- ======== 7. 附录 ======== -->
+<section id="s7">
+  <h2>7. 附录</h2>
+
+  <h3>7.1 关键设计决策</h3>
+  <table>
+    <tr><th style="width:200px">决策</th><th>说明</th></tr>
+    <tr><td>不用角色卡</td><td>场景自带角色信息，不额外引入角色扮演</td></tr>
+    <tr><td>好坏场景混合</td><td>不单独分"防御"和"接受"，用户在真实生活中两种都会遇到</td></tr>
+    <tr><td>入口提问用"哪个最像你"</td><td>不用抽象概念，用具体场景共鸣降低认知负荷</td></tr>
+    <tr><td>方法在练习中自然引入</td><td>不是先学后练，而是练完才知道用了什么方法</td></tr>
+    <tr><td>每个场景走一整条路</td><td>一个场景从输入到复盘是一条完整链路，换场景就是重复</td></tr>
+    <tr><td>评分有理论背书</td><td>标注方法来源书名，增加专业可信度</td></tr>
+  </table>
+
+  <h3>7.2 沟通方法完整对照</h3>
+  <table>
+    <tr><th style="width:30px">#</th><th>方法</th><th style="width:100px">来源</th><th>分类</th></tr>
+    <tr><td>1</td><td>非暴力沟通</td><td>《非暴力沟通》</td><td>自我觉察</td></tr>
+    <tr><td>2</td><td>萨提亚沟通姿态</td><td>维吉尼亚·萨提亚</td><td>自我觉察</td></tr>
+    <tr><td>3</td><td>情绪焦点疗法 EFT</td><td>苏·约翰逊</td><td>自我觉察</td></tr>
+    <tr><td>4</td><td>ABC 认知模型</td><td>阿尔伯特·埃利斯</td><td>自我觉察</td></tr>
+    <tr><td>5</td><td>关键对话</td><td>《关键对话》</td><td>冲突处理</td></tr>
+    <tr><td>6</td><td>高难度对话</td><td>《高难度对话》</td><td>冲突处理</td></tr>
+    <tr><td>7</td><td>CRIB 法则</td><td>《关键对话》</td><td>冲突处理</td></tr>
+    <tr><td>8</td><td>降维回应法</td><td>实践总结</td><td>冲突处理</td></tr>
+    <tr><td>9</td><td>事实锚定法</td><td>实践总结</td><td>冲突处理</td></tr>
+    <tr><td>10</td><td>课题分离</td><td>《被讨厌的勇气》</td><td>边界拒绝</td></tr>
+    <tr><td>11</td><td>果断表达法</td><td>实践总结</td><td>边界拒绝</td></tr>
+    <tr><td>12</td><td>D.E.S.C. 模型</td><td>莎伦·安东尼·鲍尔</td><td>边界拒绝</td></tr>
+    <tr><td>13</td><td>灰岩法</td><td>心理学实践</td><td>边界拒绝</td></tr>
+    <tr><td>14</td><td>戈特曼情绪急救</td><td>《幸福的婚姻》</td><td>亲密关系</td></tr>
+    <tr><td>15</td><td>爱的五种语言</td><td>盖瑞·查普曼</td><td>亲密关系</td></tr>
+    <tr><td>16</td><td>依恋理论</td><td>约翰·鲍尔比</td><td>亲密关系</td></tr>
+    <tr><td>17</td><td>情感账户</td><td>斯蒂芬·柯维</td><td>亲密关系</td></tr>
+    <tr><td>18</td><td>接受力训练</td><td>心理学实践</td><td>接受好意</td></tr>
+    <tr><td>19</td><td>自我同情理论</td><td>克里斯汀·内夫</td><td>接受好意</td></tr>
+    <tr><td>20</td><td>冒名顶替综合征应对</td><td>心理学研究</td><td>接受好意</td></tr>
+    <tr><td>21</td><td>六大影响力原则</td><td>《影响力》</td><td>影响力</td></tr>
+    <tr><td>22</td><td>FBI 谈判术</td><td>《绝不退让》</td><td>影响力</td></tr>
+    <tr><td>23</td><td>框架效应</td><td>《思考快与慢》</td><td>影响力</td></tr>
+    <tr><td>24</td><td>三层修复法</td><td>《高难度对话》延伸</td><td>自我修复</td></tr>
+    <tr><td>25</td><td>情绪急救法</td><td>实践总结</td><td>自我修复</td></tr>
+  </table>
+
+  <h3>7.3 版本记录</h3>
+  <table>
+    <tr><th>版本</th><th>日期</th><th>变更</th></tr>
+    <tr><td>v1.0</td><td>—</td><td>初始白板：基础 Agent 架构，此刻模式 4 步流程</td></tr>
+    <tr><td>v2.0</td><td>—</td><td>白板二：增加沙盘模式 5 关、场景变体、反应模式判定</td></tr>
+    <tr><td>v3.0</td><td>2026-06-22</td><td>架构升级：从 3 Agent 串行 → 1 Agent + N Skills 混合；输出完整 HTML PRD</td></tr>
+    <tr><td>v3.1</td><td>2026-06-24</td><td>PRD 代码同步更新：Agent Prompt 实际结构、25 个 Skills 完成状态、双模式（API/离线）、CloudStudio 部署链接、沙盘方法绑定机制</td></tr>
+    <tr><td>v3.2</td><td>2026-08-16</td><td>Skills 拆分落地：skills.js → skills/ 目录（manifest.json 路由 + 每方法一文件 + assembler 组装）；每方法新增 version / notFor（负例）/ 触发导向 description；选方法改排除法（agent.js 注入 notFor）；部署更新为 GitHub Pages + Cloudflare Worker 双通道；修正 4R 道歉法 → 情绪急救法</td></tr>
+  </table>
+</section>
+
+<div class="footer">
+  TakeTwo PRD v3.2 · Agent + Skill 混合架构 · 内部文档
+</div>
+
+</div>
+</body>
+</html>
